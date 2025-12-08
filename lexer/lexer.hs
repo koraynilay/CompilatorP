@@ -142,11 +142,11 @@ matchTok (stripPrefixRegex "[0-9]+" -> Just xs) = (snd xs, matchNumber $ fst xs)
 matchTok (stripPrefix ":=" -> Just xs) = (xs, TokenSimple Assignment)
 matchTok (stripPrefix "&&" -> Just xs) = (xs, TokenSimple Conjunction)
 matchTok (stripPrefix "||" -> Just xs) = (xs, TokenSimple Disjunction)
-matchTok (stripPrefix "<=" -> Just xs) = (xs, TokenSimple LessEqual)
-matchTok (stripPrefix ">=" -> Just xs) = (xs, TokenSimple GreaterEqual)
 matchTok (stripPrefix "==" -> Just xs) = (xs, TokenSimple Equal)
 matchTok (stripPrefix "!=" -> Just xs) = (xs, TokenSimple NotEqual)
+matchTok (stripPrefix "<=" -> Just xs) = (xs, TokenSimple LessEqual)
 matchTok (stripPrefix "<"  -> Just xs) = (xs, TokenSimple LessThan)
+matchTok (stripPrefix ">=" -> Just xs) = (xs, TokenSimple GreaterEqual)
 matchTok (stripPrefix ">"  -> Just xs) = (xs, TokenSimple GreaterThan)
 matchTok (stripPrefix "("  -> Just xs) = (xs, TokenSimple ParenOpen)
 matchTok (stripPrefix ")"  -> Just xs) = (xs, TokenSimple ParenClose)
@@ -190,6 +190,6 @@ readAndPrintFiles (x:xs) = putStr (x ++ ": ") >> readFile x >>= printTokens . ma
 main :: IO ()
 main = do
         args <- getArgs
-        if args == [] then
-                getProgName >>= usage >>= putStrLn
-        else readAndPrintFiles args
+        case args of
+                [] -> getProgName >>= usage >>= putStrLn
+                as -> readAndPrintFiles as
