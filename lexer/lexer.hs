@@ -115,7 +115,7 @@ matchNumber xs = TokenNumber Number $ fst $ fromRight (0, T.pack "err") $ decima
 
 matchTok :: String -> (String, Token)
 matchTok [] = ([], TokenSimple EOF)
-matchTok (stripPrefixRegex "[a-zA-Z][a-zA-Z0-9]*" -> Just res)
+matchTok (stripPrefixRegex "([a-zA-Z]|_+[a-zA-Z0-9])[a-zA-Z0-9_]*" -> Just res)
                                 | matched == "print"       = (rest, TokenString Print "print")
                                 | matched == "while"       = (rest, TokenString While "while")
                                 | matched == "do"          = (rest, TokenString Do "do")
