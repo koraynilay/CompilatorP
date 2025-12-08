@@ -11,7 +11,7 @@ import Text.Regex.TDFA ((=~))
 
 stripPrefixRegex :: String -> String -> Maybe (String, String)
 stripPrefixRegex re xs | mid r == "" = Nothing
-                 | otherwise = Just (mid r, last r)
+                       | otherwise = Just (mid r, last r)
   where
         r = xs =~ ("^" ++ re) :: (String, String, String)
         mid (x,y,z) = y
