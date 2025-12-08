@@ -3,7 +3,6 @@ import Data.Text.Read
 import Data.Text as T (pack, unpack)
 import Data.Char
 import Data.List
-import Data.Either
 
 import System.Environment (getArgs, getProgName)
 
