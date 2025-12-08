@@ -7,6 +7,16 @@ import Data.Either
 
 import System.Environment (getArgs, getProgName)
 
+import Text.Regex.TDFA ((=~))
+
+stripPrefixRegex :: String -> String -> Maybe (String, String)
+stripPrefixRegex re xs | mid r == "" = Nothing
+                 | otherwise = Just (mid r, last r)
+  where
+        r = xs =~ ("^" ++ re) :: (String, String, String)
+        mid (x,y,z) = y
+        last (x,y,z) = z
+
 -- TokenName            Pattern                         Nome
 -- -------------------------------------------------------
 -- Numeri           Costante numerica                256
@@ -111,10 +121,8 @@ parseIdentifier :: String -> String
 parseIdentifier (x:xs) | not $ isAlphaNum x = []
                        | otherwise = x : parseIdentifier xs
 
-matchNumber :: String -> (String, Token)
-matchNumber xs = (T.unpack (snd r), TokenNumber Number $ fst r)
-  where
-        r = fromRight (0, T.pack "err") $ decimal $ T.pack xs
+matchNumber :: String -> Token
+matchNumber xs = TokenNumber Number $ fst $ fromRight (0, T.pack "err") $ decimal $ T.pack xs
 
 matchTok :: String -> (String, Token)
 matchTok [] = ([], TokenSimple EOF)
@@ -126,6 +134,8 @@ matchTok (stripPrefix "case"        -> Just xs) = (xs, TokenString Case "case")
 matchTok (stripPrefix "break"       -> Just xs) = (xs, TokenString Break "break")
 matchTok (stripPrefix "default"     -> Just xs) = (xs, TokenString Default "default")
 matchTok (stripPrefix "user"        -> Just xs) = (xs, TokenString UserInput "user")
+matchTok (stripPrefixRegex  "[a-zA-Z][a-zA-Z0-9]*" -> Just xs) = (snd xs, TokenString Identifier $ fst xs)
+matchTok (stripPrefixRegex  "[0-9]+" -> Just xs) = (snd xs, matchNumber $ fst xs)
 matchTok (stripPrefix ":=" -> Just xs) = (xs, TokenSimple Assignment)
 matchTok (stripPrefix "&&" -> Just xs) = (xs, TokenSimple Conjunction)
 matchTok (stripPrefix "||" -> Just xs) = (xs, TokenSimple Disjunction)
@@ -147,8 +157,6 @@ matchTok (stripPrefix "*"  -> Just xs) = (xs, TokenSimple Multiply)
 matchTok (stripPrefix "/"  -> Just xs) = (xs, TokenSimple Divide)
 matchTok (stripPrefix ";"  -> Just xs) = (xs, TokenSimple Semicolon)
 matchTok (stripPrefix ","  -> Just xs) = (xs, TokenSimple Comma)
-matchTok (x:xs) | isAlpha x = matchIdentifier (x:xs)
-                | isDigit x = matchNumber (x:xs)
 
 match :: String -> [Token]
 match [] = [snd $ matchTok []]
