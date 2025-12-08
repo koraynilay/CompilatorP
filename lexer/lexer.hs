@@ -153,10 +153,22 @@ matchTok (stripPrefix ","  -> Just xs) = (xs, TokenSimple Comma)
 
 match :: String -> [Token]
 match [] = [snd $ matchTok []]
+match ('/':'*':xs) = finishMultilineComment xs
+match ('/':'/':xs) = finishSinglelineComment xs
 match (x:xs) | isSpace x = match xs
              | otherwise = (snd r) : match (fst r)
   where
         r = matchTok (x:xs)
+
+finishMultilineComment :: String -> [Token]
+finishMultilineComment [] = error "unclosed multiline comment"
+finishMultilineComment ('*':'/':xs) = match xs
+finishMultilineComment (x:xs) = finishMultilineComment xs
+
+finishSinglelineComment :: String -> [Token]
+finishSinglelineComment [] = match []
+finishSinglelineComment ('\n':xs) = match xs
+finishSinglelineComment (x:xs) = finishSinglelineComment xs
 
 printableToken :: Token -> String
 printableToken t = "<" ++ (show tok) ++ attr ++ ">"
