@@ -111,7 +111,9 @@ tokenValue (TokenNumber _ n) = Just $ Right n
 tokenValue (TokenSimple n)   = Nothing
 
 matchNumber :: String -> Token
-matchNumber xs = TokenNumber Number $ fst $ fromRight (0, T.pack "err") $ decimal $ T.pack xs
+matchNumber xs = case decimal $ T.pack xs of
+                        Right a -> TokenNumber Number $ fst a
+                        Left e  -> error "expected number but got non-digit characters"
 
 matchTok :: String -> (String, Token)
 matchTok [] = ([], TokenSimple EOF)
@@ -149,6 +151,8 @@ matchTok (stripPrefix "*"  -> Just xs) = (xs, TokenSimple Multiply)
 matchTok (stripPrefix "/"  -> Just xs) = (xs, TokenSimple Divide)
 matchTok (stripPrefix ";"  -> Just xs) = (xs, TokenSimple Semicolon)
 matchTok (stripPrefix ","  -> Just xs) = (xs, TokenSimple Comma)
+matchTok (x:y:xs) = error $ "wrong sequence of characters: " ++ [x,y]
+matchTok (x:[]) = error $ "wrong sequence of characters: " ++ [x]
 
 match :: String -> [Token]
 match [] = [snd $ matchTok []]
