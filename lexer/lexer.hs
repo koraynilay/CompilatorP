@@ -6,13 +6,15 @@ import Data.List
 
 import System.Environment (getArgs, getProgName)
 
-import Text.Regex.TDFA ((=~))
+import Text.Regex.TDFA (Regex, (=~), makeRegexOpts, defaultCompOpt, defaultExecOpt)
+import qualified Text.Regex.TDFA as RE (match, multiline)
 
 stripPrefixRegex :: String -> String -> Maybe (String, String)
 stripPrefixRegex re xs | mid r == "" = Nothing
                        | otherwise = Just (mid r, last r)
   where
-        r = xs =~ ("^" ++ re) :: (String, String, String)
+        regex = makeRegexOpts defaultCompOpt{RE.multiline=False} defaultExecOpt ("^" ++ re) :: Regex
+        r = RE.match regex xs :: (String, String, String)
         mid (x,y,z) = y
         last (x,y,z) = z
 
