@@ -153,6 +153,7 @@ matchTok (stripPrefix "*"  -> Just xs) = (xs, TokenSimple Multiply)
 matchTok (stripPrefix "/"  -> Just xs) = (xs, TokenSimple Divide)
 matchTok (stripPrefix ";"  -> Just xs) = (xs, TokenSimple Semicolon)
 matchTok (stripPrefix ","  -> Just xs) = (xs, TokenSimple Comma)
+matchTok (':':'3':xs) = error $ "wwong sequence *blushes* of chawactews ^^ UwU: :3"
 matchTok (x:y:xs) = error $ "wrong sequence of characters: " ++ [x,y]
 matchTok (x:[]) = error $ "wrong sequence of characters: " ++ [x]
 
