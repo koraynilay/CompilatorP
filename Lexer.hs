@@ -1,4 +1,6 @@
 {-# LANGUAGE ViewPatterns #-}
+module Lexer where
+
 import Data.Text.Read
 import Data.Text as T (pack, unpack)
 import Data.Char
