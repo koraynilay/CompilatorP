@@ -35,61 +35,51 @@ module Token where
 -- Virgola          ,                                   44
 -- EOF              Fine input                          -1
 
-data TokenName = Number        | Identifier   | Print        | While
-               | Do            | Conditional  | Case         | Break
-               | Default       | UserInput    | Assignment   | Conjunction
-               | Disjunction   | LessEqual    | GreaterEqual | Equal
-               | NotEqual      | LessThan     | GreaterThan  | ParenOpen
-               | ParenClose    | BracketOpen  | BracketClose | BraceOpen
-               | BraceClose    | Plus         | Minus        | Multiply
-               | Divide        | Semicolon    | Comma        | EOF
-                deriving (Show, Eq)
-
-getTokenName :: TokenName -> Int
-getTokenName Number        = 256
-getTokenName Identifier    = 257
-getTokenName Print         = 258
-getTokenName While         = 259
-getTokenName Do            = 260
-getTokenName Conditional   = 261
-getTokenName Case          = 262
-getTokenName Break         = 263
-getTokenName Default       = 264
-getTokenName UserInput     = 265
-getTokenName Assignment    = 266
-getTokenName Conjunction   = 267
-getTokenName Disjunction   = 268
-getTokenName LessEqual     = 269
-getTokenName GreaterEqual  = 270
-getTokenName Equal         = 271
-getTokenName NotEqual      = 272
-getTokenName LessThan      = 60
-getTokenName GreaterThan   = 62
-getTokenName ParenOpen     = 40
-getTokenName ParenClose    = 41
-getTokenName BracketOpen   = 91
-getTokenName BracketClose  = 93
-getTokenName BraceOpen     = 123
-getTokenName BraceClose    = 125
-getTokenName Plus          = 43
-getTokenName Minus         = 45
-getTokenName Multiply      = 42
-getTokenName Divide        = 47
-getTokenName Semicolon     = 59
-getTokenName Comma         = 44
-getTokenName EOF           = -1
-
-data Token = TokenString TokenName String
-           | TokenNumber TokenName Integer
-           | TokenSimple TokenName
+data Token = Number Integer | Identifier String | Print        | While
+           | Do             | Conditional       | Case         | Break
+           | Default        | UserInput         | Assignment   | Conjunction
+           | Disjunction    | LessEqual         | GreaterEqual | Equal
+           | NotEqual       | LessThan          | GreaterThan  | ParenOpen
+           | ParenClose     | BracketOpen       | BracketClose | BraceOpen
+           | BraceClose     | Plus              | Minus        | Multiply
+           | Divide         | Semicolon         | Comma        | EOF
              deriving (Show, Eq)
 
-tokenName :: Token -> TokenName
-tokenName (TokenString n _) = n
-tokenName (TokenNumber n _) = n
-tokenName (TokenSimple n)   = n
+getTokenName :: Token -> Int
+getTokenName (Number _)     = 256
+getTokenName (Identifier _) = 257
+getTokenName Print          = 258
+getTokenName While          = 259
+getTokenName Do             = 260
+getTokenName Conditional    = 261
+getTokenName Case           = 262
+getTokenName Break          = 263
+getTokenName Default        = 264
+getTokenName UserInput      = 265
+getTokenName Assignment     = 266
+getTokenName Conjunction    = 267
+getTokenName Disjunction    = 268
+getTokenName LessEqual      = 269
+getTokenName GreaterEqual   = 270
+getTokenName Equal          = 271
+getTokenName NotEqual       = 272
+getTokenName LessThan       = 60
+getTokenName GreaterThan    = 62
+getTokenName ParenOpen      = 40
+getTokenName ParenClose     = 41
+getTokenName BracketOpen    = 91
+getTokenName BracketClose   = 93
+getTokenName BraceOpen      = 123
+getTokenName BraceClose     = 125
+getTokenName Plus           = 43
+getTokenName Minus          = 45
+getTokenName Multiply       = 42
+getTokenName Divide         = 47
+getTokenName Semicolon      = 59
+getTokenName Comma          = 44
+getTokenName EOF            = -1
 
 tokenValue :: Token -> Maybe (Either String Integer)
-tokenValue (TokenString _ s) = Just $ Left s
-tokenValue (TokenNumber _ n) = Just $ Right n
-tokenValue (TokenSimple n)   = Nothing
+tokenValue (Identifier s) = Just $ Left s
+tokenValue (Number     n) = Just $ Right n
+tokenValue _              = Nothing

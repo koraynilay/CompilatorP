@@ -8,7 +8,6 @@ import Data.Text as T (pack, unpack)
 import Data.Char
 import Data.List
 
-import System.Environment (getArgs, getProgName)
 import System.Exit (die)
 
 import Text.Regex.TDFA (Regex, (=~), makeRegexOpts, defaultCompOpt, defaultExecOpt)
@@ -25,45 +24,45 @@ stripPrefixRegex re xs | mid r == "" = Nothing
 
 matchNumber :: String -> Either String Token
 matchNumber xs = case decimal $ T.pack xs of
-                        Right a -> Right $ TokenNumber Number $ fst a
+                        Right a -> Right $ Number $ fst a
                         Left e  -> Left "expected number but got non-digit characters"
 
 matchTok :: String -> (String, Either String Token)
-matchTok [] = ([], Right $ TokenSimple EOF)
+matchTok [] = ([], Right $ EOF)
 matchTok (stripPrefixRegex "([a-zA-Z]|_+[a-zA-Z0-9])[a-zA-Z0-9_]*" -> Just res)
-                                | matched == "print"       = (rest, Right $ TokenString Print "print")
-                                | matched == "while"       = (rest, Right $ TokenString While "while")
-                                | matched == "do"          = (rest, Right $ TokenString Do "do")
-                                | matched == "conditional" = (rest, Right $ TokenString Conditional "conditional")
-                                | matched == "case"        = (rest, Right $ TokenString Case "case")
-                                | matched == "break"       = (rest, Right $ TokenString Break "break")
-                                | matched == "default"     = (rest, Right $ TokenString Default "default")
-                                | matched == "user"        = (rest, Right $ TokenString UserInput "user")
-                                | otherwise                = (rest, Right $ TokenString Identifier matched)
+                                | matched == "print"       = (rest, Right $ Print)
+                                | matched == "while"       = (rest, Right $ While)
+                                | matched == "do"          = (rest, Right $ Do)
+                                | matched == "conditional" = (rest, Right $ Conditional)
+                                | matched == "case"        = (rest, Right $ Case)
+                                | matched == "break"       = (rest, Right $ Break)
+                                | matched == "default"     = (rest, Right $ Default)
+                                | matched == "user"        = (rest, Right $ UserInput)
+                                | otherwise                = (rest, Right $ Identifier matched)
   where
         (matched, rest) = res
 matchTok (stripPrefixRegex "[0-9]+" -> Just res) = (snd res, matchNumber $ fst res)
-matchTok (stripPrefix ":=" -> Just xs) = (xs, Right $ TokenSimple Assignment)
-matchTok (stripPrefix "&&" -> Just xs) = (xs, Right $ TokenSimple Conjunction)
-matchTok (stripPrefix "||" -> Just xs) = (xs, Right $ TokenSimple Disjunction)
-matchTok (stripPrefix "==" -> Just xs) = (xs, Right $ TokenSimple Equal)
-matchTok (stripPrefix "!=" -> Just xs) = (xs, Right $ TokenSimple NotEqual)
-matchTok (stripPrefix "<=" -> Just xs) = (xs, Right $ TokenSimple LessEqual)
-matchTok (stripPrefix "<"  -> Just xs) = (xs, Right $ TokenSimple LessThan)
-matchTok (stripPrefix ">=" -> Just xs) = (xs, Right $ TokenSimple GreaterEqual)
-matchTok (stripPrefix ">"  -> Just xs) = (xs, Right $ TokenSimple GreaterThan)
-matchTok (stripPrefix "("  -> Just xs) = (xs, Right $ TokenSimple ParenOpen)
-matchTok (stripPrefix ")"  -> Just xs) = (xs, Right $ TokenSimple ParenClose)
-matchTok (stripPrefix "["  -> Just xs) = (xs, Right $ TokenSimple BracketOpen)
-matchTok (stripPrefix "]"  -> Just xs) = (xs, Right $ TokenSimple BracketClose)
-matchTok (stripPrefix "{"  -> Just xs) = (xs, Right $ TokenSimple BraceOpen)
-matchTok (stripPrefix "}"  -> Just xs) = (xs, Right $ TokenSimple BraceClose)
-matchTok (stripPrefix "+"  -> Just xs) = (xs, Right $ TokenSimple Plus)
-matchTok (stripPrefix "-"  -> Just xs) = (xs, Right $ TokenSimple Minus)
-matchTok (stripPrefix "*"  -> Just xs) = (xs, Right $ TokenSimple Multiply)
-matchTok (stripPrefix "/"  -> Just xs) = (xs, Right $ TokenSimple Divide)
-matchTok (stripPrefix ";"  -> Just xs) = (xs, Right $ TokenSimple Semicolon)
-matchTok (stripPrefix ","  -> Just xs) = (xs, Right $ TokenSimple Comma)
+matchTok (stripPrefix ":=" -> Just xs) = (xs, Right $ Assignment)
+matchTok (stripPrefix "&&" -> Just xs) = (xs, Right $ Conjunction)
+matchTok (stripPrefix "||" -> Just xs) = (xs, Right $ Disjunction)
+matchTok (stripPrefix "==" -> Just xs) = (xs, Right $ Equal)
+matchTok (stripPrefix "!=" -> Just xs) = (xs, Right $ NotEqual)
+matchTok (stripPrefix "<=" -> Just xs) = (xs, Right $ LessEqual)
+matchTok (stripPrefix "<"  -> Just xs) = (xs, Right $ LessThan)
+matchTok (stripPrefix ">=" -> Just xs) = (xs, Right $ GreaterEqual)
+matchTok (stripPrefix ">"  -> Just xs) = (xs, Right $ GreaterThan)
+matchTok (stripPrefix "("  -> Just xs) = (xs, Right $ ParenOpen)
+matchTok (stripPrefix ")"  -> Just xs) = (xs, Right $ ParenClose)
+matchTok (stripPrefix "["  -> Just xs) = (xs, Right $ BracketOpen)
+matchTok (stripPrefix "]"  -> Just xs) = (xs, Right $ BracketClose)
+matchTok (stripPrefix "{"  -> Just xs) = (xs, Right $ BraceOpen)
+matchTok (stripPrefix "}"  -> Just xs) = (xs, Right $ BraceClose)
+matchTok (stripPrefix "+"  -> Just xs) = (xs, Right $ Plus)
+matchTok (stripPrefix "-"  -> Just xs) = (xs, Right $ Minus)
+matchTok (stripPrefix "*"  -> Just xs) = (xs, Right $ Multiply)
+matchTok (stripPrefix "/"  -> Just xs) = (xs, Right $ Divide)
+matchTok (stripPrefix ";"  -> Just xs) = (xs, Right $ Semicolon)
+matchTok (stripPrefix ","  -> Just xs) = (xs, Right $ Comma)
 matchTok (':':'3':xs) = (xs, Left $ "wwong sequence *blushes* of chawactews ^^ UwU: :3")
 matchTok (x:y:xs) = (xs, Left $ "wrong sequence of characters: " ++ [x,y])
 matchTok (x:[]) = ([], Left $ "wrong sequence of characters: " ++ [x])
@@ -107,7 +106,7 @@ maybeListToxUnsafe (Right x:xs) = x : maybeListToxUnsafe xs
 printableToken :: Token -> String
 printableToken t = "<" ++ (show tok) ++ attr ++ ">"
   where
-        tok = getTokenName $ tokenName t
+        tok = getTokenName $ t
         attr = case tokenValue t of
                 Nothing -> ""
                 Just a -> "," ++ either id show a
@@ -125,16 +124,6 @@ printTokens (t:ts) = putStr (printableToken t) >> putStr " " >> printTokens ts
 printFilename :: String -> [Token] -> IO [Token]
 printFilename xs toks = putStr (xs ++ ": ") >> return toks
 
-usage :: String -> IO String
-usage s = return ("Usage: " ++ s ++ " FILE")
-
 readAndPrintFiles :: [String] -> IO ()
 readAndPrintFiles [] = putStrLn ""
 readAndPrintFiles (x:xs) = readFile x >>= matchIO x >>= printFilename x >>= printTokens >> readAndPrintFiles xs
-
-main :: IO ()
-main = do
-        args <- getArgs
-        case args of
-                [] -> getProgName >>= usage >>= putStrLn
-                as -> readAndPrintFiles as
