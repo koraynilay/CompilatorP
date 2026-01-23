@@ -99,6 +99,11 @@ maybeListTox fn (Right x:xs) = (x :) <$> maybeListTox fn xs
 maybeListTox fn (Right x:xs) = fmap ((:) x) (maybeListTox fn xs)
 -}
 
+maybeListToxUnsafe :: [Either String Token] -> [Token]
+maybeListToxUnsafe [] = []
+maybeListToxUnsafe (Left msg:_) = error $ "lexer error: " ++ msg
+maybeListToxUnsafe (Right x:xs) = x : maybeListToxUnsafe xs
+
 printableToken :: Token -> String
 printableToken t = "<" ++ (show tok) ++ attr ++ ">"
   where
