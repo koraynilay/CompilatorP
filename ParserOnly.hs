@@ -98,11 +98,7 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF)
 
 statlist :: CompilerStateT ()
-statlist = (stat >> statlistp)
-
-statlistp :: CompilerStateT ()
-statlistp = (tok Semicolon >> stat >> statlistp)
-        <|> return ()
+statlist = stat >> ((tok Semicolon >> statlist) <|> return ())
 
 stat :: CompilerStateT ()
 stat = (tokId >> tok Assignment >> assignv)
@@ -115,17 +111,10 @@ assignv :: CompilerStateT ()
 assignv = (tok UserInput) <|> expr
 
 caselist :: CompilerStateT ()
-caselist = (caseitem >> caselistp)
-
-caselistp :: CompilerStateT ()
-caselistp = (caseitem >> caselistp)
-        <|> return ()
+caselist = caseitem >> (caselist <|> return ())
 
 caseitem :: CompilerStateT ()
-caseitem = (tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> caseitemd)
-
-caseitemd :: CompilerStateT ()
-caseitemd = (tok Break) <|> return ()
+caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> (tok Break <|> return ())
 
 bexpr :: CompilerStateT ()
 bexpr = (relop >> expr >> expr)
@@ -145,11 +134,7 @@ operands = (expr >> expr)
        <|> (tok BracketOpen >> exprlist >> tok BracketClose)
 
 exprlist :: CompilerStateT ()
-exprlist = (expr >> exprlistp)
-
-exprlistp :: CompilerStateT ()
-exprlistp = (tok Comma >> expr >> exprlistp)
-        <|> return ()
+exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
 
 relop :: CompilerStateT ()
 relop = (tok GreaterEqual)
