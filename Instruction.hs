@@ -1,27 +1,28 @@
 module Instruction where
 
-data Instruction = Ldc Int
+data Instruction = Dup
+                 | Pop
                  | Imul
                  | Ineg
                  | Idiv
                  | Iadd
                  | Isub
-                 | Istore Int
                  | Ior
                  | Iand
+                 | Ldc Int
+                 | Istore Int
                  | Iload Int
-                 | If_icmpeq Int
-                 | If_icmple Int
-                 | If_icmplt Int
-                 | If_icmpne Int
-                 | If_icmpge Int
-                 | If_icmpgt Int
+                 | IfCmpEQ Int
+                 | IfCmpLE Int
+                 | IfCmpLT Int
+                 | IfCmpNE Int
+                 | IfCmpGE Int
+                 | IfCmpGT Int
                  | Ifne Int
                  | Goto Int
-                 | InvokeStatic Int  -- 1 per print, 0 (o altro) per read
-                 | Dup
-                 | Pop
-                 | Label Int
+                 | InvokePrint
+                 | InvokeRead
+                 | Label String
                    deriving (Show, Eq)
 
 -- Funzione toJasmin con pattern matching
@@ -38,14 +39,14 @@ toJasmin Iand            = " iand\n"
 toJasmin (Ldc val)       = " ldc " ++ show val ++ "\n"
 toJasmin (Istore addr)   = " istore " ++ show addr ++ "\n"
 toJasmin (Iload addr)    = " iload " ++ show addr ++ "\n"
-toJasmin (If_icmpeq l)   = " if_icmpeq L" ++ show l ++ "\n"
-toJasmin (If_icmple l)   = " if_icmple L" ++ show l ++ "\n"
-toJasmin (If_icmplt l)   = " if_icmplt L" ++ show l ++ "\n"
-toJasmin (If_icmpne l)   = " if_icmpne L" ++ show l ++ "\n"
-toJasmin (If_icmpge l)   = " if_icmpge L" ++ show l ++ "\n"
-toJasmin (If_icmpgt l)   = " if_icmpgt L" ++ show l ++ "\n"
+toJasmin (IfCmpEQ l)     = " if_icmpeq L" ++ show l ++ "\n"
+toJasmin (IfCmpLE l)     = " if_icmple L" ++ show l ++ "\n"
+toJasmin (IfCmpLT l)     = " if_icmplt L" ++ show l ++ "\n"
+toJasmin (IfCmpNE l)     = " if_icmpne L" ++ show l ++ "\n"
+toJasmin (IfCmpGE l)     = " if_icmpge L" ++ show l ++ "\n"
+toJasmin (IfCmpGT l)     = " if_icmpgt L" ++ show l ++ "\n"
 toJasmin (Ifne l)        = " ifne L" ++ show l ++ "\n"
 toJasmin (Goto l)        = " goto L" ++ show l ++ "\n"
-toJasmin (InvokeStatic 1) = " invokestatic Output/print(I)V\n"
-toJasmin (InvokeStatic _) = " invokestatic Output/read()I\n"
-toJasmin (Label l)       = "L" ++ show l ++ ":\n"
+toJasmin InvokePrint     = " invokestatic Output/print(I)V\n"
+toJasmin InvokeRead      = " invokestatic Output/read()I\n"
+toJasmin (Label l)       = l
