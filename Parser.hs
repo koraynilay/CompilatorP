@@ -56,17 +56,19 @@ newLabel = do
 getTok :: CompilerStateT Token
 getTok = do
   s <- get
-  let (t:ts) = tokens s
-  put (s { tokens = ts })
-  return t
+  case tokens s of
+    (t:ts) -> do
+      put (s { tokens = ts })
+      return t
+    [] -> empty
 
 sat :: (Token -> Bool) -> CompilerStateT Token
 sat p = do
   t <- getTok
   if p t then return t else empty
 
-tok :: CompilerStateT Token
-tok = sat (== tok)
+tok :: Token -> CompilerStateT Token
+tok t = sat (== t)
 
 -- prods
 
