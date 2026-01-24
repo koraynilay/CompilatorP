@@ -70,29 +70,60 @@ sat p = do
 tok :: Token -> CompilerStateT Token
 tok t = sat (== t)
 
+tokId :: CompilerStateT Token
+tokId = do
+  t <- getTok
+  case t of
+    Identifier var -> return t
+    _ -> empty
+
+tokNum :: CompilerStateT Token
+tokNum = do
+  t <- getTok
+  case t of
+    Number n -> return t
+    _ -> empty
+
 -- prods
 
 prog :: CompilerStateT ()
-prog = statlist >> tok EOF
+prog = do l <- newLabel
+          statlist l
+          emitL l
+          tok EOF
+          return ()
 
-statlist :: CompilerStateT ()
-statlist = stat >> statlistp
-       <|> tok Semicolon >> stat >> statlistp
+statlist :: Label -> CompilerStateT ()
+statlist nextL = do snl <- newLabel
+                    stat snl
+                    emitL snl
+                    statlistp nextL
 
-statlistp :: CompilerStateT ()
-statlistp = tok Semicolon >> stat >> statlistp
-        <|> return
+statlistp :: Label -> CompilerStateT ()
+statlistp nextL = do tok Semicolon 
+                     snl <- newLabel
+                     stat snl
+                     emitL snl
+                     statlistp nextL
+              <|> emit (Goto nextL)
 
-stat :: CompilerStateT ()
-stat = do (Identifier var) <- tok Identifier
-          tok Assignment
-          assignv
-          varAddr <- getVarAddr var
-          emit (Istore varAddr)
-   <|> tok Print >> tok BracketOpen >> exprlist >> tok BracketClose
-   <|> tok While >> tok ParenOpen >> bexpr >> tok Do >> stat
-   <|> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
-   <|> tok CurlyOpen >> statlist >> tok CurlyClose
+stat :: Label -> CompilerStateT ()
+stat nextL = do (Identifier var) <- tokId
+                tok Assignment
+                assignv
+                varAddr <- getVarAddr var
+                emit (Istore varAddr)
+         <|> tok Print >> tok BracketOpen >> exprlist >> tok BracketClose >> emit InvokePrint >> emit (Goto nextL)
+         <|> do tok While
+                tok ParenOpen
+                bexprTrue <- newLabel
+                bexpr bexprTrue nextL
+                tok ParenClose
+                tok Do
+                emitL bexprTrue
+                stat nextL
+         <|> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
+         <|> tok CurlyOpen >> statlist >> tok CurlyClose
 
 assignv :: CompilerStateT ()
 assignv = do tok UserInput
@@ -112,17 +143,21 @@ caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> sta
 caseitemd :: CompilerStateT ()
 caseitemd = tok Break <|> return
 
-bexpr :: CompilerStateT ()
-bexpr = relop >> expr >> expr
+-- label true -> label false -> state
+bexpr :: Label -> Label -> CompilerStateT ()
+bexpr = do relop
+           expr
+           expr
+           emit
 
 expr :: CompilerStateT ()
 expr = tok Plus >> operands
    <|> tok Minus >> expr >> expr
-   <|> tok Multiply >> mult
+   <|> tok Multiply >> operands
    <|> tok Divide >> expr expr
-   <|> do (Number n) <- tok Number
+   <|> do (Number n) <- tokNum
           emit (Ldc n)
-   <|> do (Identifier var) <- tok Identifier
+   <|> do (Identifier var) <- tokId
           varAddr <- getVarAddr var
           emit (Iload varAddr) -- TODO: handle variable not declared
 
@@ -145,8 +180,8 @@ exprlistp :: CompilerStateT ()
 exprlistp = tok Comma >> expr >> exprlistp
         <|> return () -- () needed?
 
-relop :: CompilerStateT ()
-relop = tok GreaterEqual >> emit 
+relop :: CompilerStateT Instruction
+relop = tok GreaterEqual >> 
 
 
 
