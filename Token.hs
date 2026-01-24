@@ -40,8 +40,8 @@ data Token = Number Integer | Identifier String | Print        | While
            | Default        | UserInput         | Assignment   | Conjunction
            | Disjunction    | LessEqual         | GreaterEqual | Equal
            | NotEqual       | LessThan          | GreaterThan  | ParenOpen
-           | ParenClose     | BracketOpen       | BracketClose | BraceOpen
-           | BraceClose     | Plus              | Minus        | Multiply
+           | ParenClose     | BracketOpen       | BracketClose | CurlyOpen
+           | CurlyClose     | Plus              | Minus        | Multiply
            | Divide         | Semicolon         | Comma        | EOF
              deriving (Show, Eq)
 
@@ -69,8 +69,8 @@ getTokenName ParenOpen      = 40
 getTokenName ParenClose     = 41
 getTokenName BracketOpen    = 91
 getTokenName BracketClose   = 93
-getTokenName BraceOpen      = 123
-getTokenName BraceClose     = 125
+getTokenName CurlyOpen      = 123
+getTokenName CurlyClose     = 125
 getTokenName Plus           = 43
 getTokenName Minus          = 45
 getTokenName Multiply       = 42
