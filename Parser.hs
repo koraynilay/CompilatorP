@@ -13,7 +13,7 @@ type CompilerStateT = StateT CompilerState Maybe
 data CompilerState = CompilerState
   { labelCounter :: Int
   , tokens       :: [Token]
-  , instructions :: [Instruction]
+  , instructions :: [Either Instruction Label]
   , symbolTable  :: M.Map String Int
   , nextVarAddr :: Int
   } deriving (Show)
@@ -46,12 +46,12 @@ getVarAddr varName = do
       put s { symbolTable = M.insert varName newAddr t }
       return newAddr
 
-newLabel :: CompilerStateT String
+newLabel :: CompilerStateT Label
 newLabel = do
   s <- get
   let labelNumber = labelCounter s
   put $ s { labelCounter = labelNumber + 1 }
-  return $ "L" ++ show labelNumber ++ ":"
+  return $ Label $ "L" ++ show labelNumber ++ ":"
 
 getTok :: CompilerStateT Token
 getTok = do
@@ -150,6 +150,14 @@ relop = tok GreaterEqual >> emit
 
 
 
+-- TODO: use ins : instructions s and reverse at the end for efficiency
+emit :: Instruction -> CompilerStateT ()
+emit ins = modify $ \s -> s { instructions = instructions s ++ [Left ins] }
+emitL :: Label -> CompilerStateT ()
+emitL ins = modify $ \s -> s { instructions = instructions s ++ [Right ins] }
+
+
+
 --  s <- get
 --  case tokens s of
 --    (Print:ts) -> expr >> getVarAddr var >>= \addr -> emit (Istore addr)
@@ -157,10 +165,6 @@ relop = tok GreaterEqual >> emit
 --    (Identifier var:Assignment:ts) -> expr >> getVarAddr var >>= \addr -> emit (Istore addr)
 
   
-
-emit :: Instruction -> CompilerStateT ()
--- TODO: use ins : instructions s and reverse at the end for efficiency
-emit ins = modify $ \s -> s { instructions = instructions s ++ [ins] }
 
 
 --prog :: [Token] -> [Instruction]
