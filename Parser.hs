@@ -37,16 +37,12 @@ parseDebug ts = runStateT prog $ initialState { tokens = ts }
 
 nextVarAddrM :: CompilerStateT Int
 nextVarAddrM = do
-  s <- get
-  let addr = nextVarAddr s
-  put s { nextVarAddr = addr + 1 }
+  addr <- gets nextVarAddr
+  modify $ \s -> s { nextVarAddr = addr + 1 }
   return addr
 
 getVarAddr :: String -> CompilerStateT (Maybe Int)
-getVarAddr varName = do
-  s <- get
-  let t = symbolTable s
-  return $ M.lookup varName t
+getVarAddr varName = gets (M.lookup varName . symbolTable)
 
 getOrAddVarAddr :: String -> CompilerStateT Int
 getOrAddVarAddr varName = do
@@ -55,24 +51,21 @@ getOrAddVarAddr varName = do
     Just addr -> return addr
     Nothing -> do
       newAddr <- nextVarAddrM
-      s <- get
-      let t = symbolTable s
-      put s { symbolTable = M.insert varName newAddr t }
+      modify $ \s -> s { symbolTable = M.insert varName newAddr (symbolTable s) }
       return newAddr
 
 newLabel :: CompilerStateT Label
 newLabel = do
-  s <- get
-  let labelNumber = labelCounter s
-  put $ s { labelCounter = labelNumber + 1 }
+  labelNumber <- gets labelCounter
+  modify $ \s -> s { labelCounter = labelNumber + 1 }
   return $ Label $ "L" ++ show labelNumber
 
 getTok :: CompilerStateT Token
 getTok = do
-  s <- get
-  case tokens s of
+  toks <- gets tokens
+  case toks of
     (t:ts) -> do
-      put (s { tokens = ts })
+      modify $ \s -> s { tokens = ts }
       return t
     [] -> empty
 
