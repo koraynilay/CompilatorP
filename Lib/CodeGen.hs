@@ -1,6 +1,6 @@
-module CodeGen where
+module Lib.CodeGen where
 
-import Instruction
+import Lib.Instruction
 
 type Code = [CodeLine]
 

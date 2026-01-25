@@ -1,7 +1,7 @@
 {-# LANGUAGE ViewPatterns #-}
-module Lexer where
+module Lib.Lexer where
 
-import Token
+import Lib.Token
 
 import Data.Text.Read
 import Data.Text as T (pack, unpack)

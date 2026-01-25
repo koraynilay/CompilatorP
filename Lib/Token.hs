@@ -1,4 +1,4 @@
-module Token where
+module Lib.Token where
 
 -- TokenName            Pattern                         Nome
 -- -------------------------------------------------------

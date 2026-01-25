@@ -1,8 +1,8 @@
-module Parser where
+module Lib.Parser where
 
-import Token
-import Lexer
-import Instruction
+import Lib.Token
+import Lib.Lexer
+import Lib.Instruction
 
 import qualified Data.Map as M
 import Control.Monad.State

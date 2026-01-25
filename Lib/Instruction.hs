@@ -1,4 +1,4 @@
-module Instruction where
+module Lib.Instruction where
 
 newtype Label = Label String
   deriving (Show, Eq)

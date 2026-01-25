@@ -1,9 +1,9 @@
-module Translator where
+module Lib.Translator where
 
-import Token
-import Lexer
-import Instruction
-import CodeGen
+import Lib.Token
+import Lib.Lexer
+import Lib.Instruction
+import Lib.CodeGen
 
 import qualified Data.Map as M
 import Control.Monad.State
