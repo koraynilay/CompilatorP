@@ -154,7 +154,7 @@ stat = peekTok >>= \t -> case t of
                             emitL defaultL
                             stat
        CurlyOpen      -> tok CurlyOpen >> statlist >> tok CurlyClose >> return ()
-       _              -> empty
+       _              -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 assignv :: CompilerStateT ()
 assignv = peekTok >>= \t -> case t of
@@ -197,7 +197,7 @@ bexpr jdata = peekTok >>= \t -> case t of
                                   expr
                                   let jloc = if notinv jdata then jbody jdata else jumpto jdata
                                   emit (jmpInstr jloc)
-              _             -> empty
+              _             -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 
 expr :: CompilerStateT ()
@@ -213,7 +213,7 @@ expr = peekTok >>= \t -> case t of
                             case maybeVarAddr of
                               Just varAddr -> emit (Iload varAddr)
                               Nothing -> error ("variable " ++ var ++ " not declared")
-       _              -> empty
+       _              -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
@@ -233,4 +233,4 @@ relop notinv = peekTok >>= \t -> case t of
                GreaterThan  -> tok GreaterThan  >> return (if notinv then IfCmpGT else IfCmpLE)
                LessThan     -> tok LessThan     >> return (if notinv then IfCmpLT else IfCmpGE)
                NotEqual     -> tok NotEqual     >> return (if notinv then IfCmpNE else IfCmpEQ)
-               _            -> empty
+               _            -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)

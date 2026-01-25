@@ -79,7 +79,7 @@ stat = peekTok >>= \t -> case t of
        While        -> tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat
        Conditional  -> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
        CurlyOpen    -> tok CurlyOpen >> statlist >> tok CurlyClose
-       _            -> empty
+       _            -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 assignv :: CompilerStateT ()
 assignv = peekTok >>= \t -> case t of
@@ -101,7 +101,7 @@ bexpr = peekTok >>= \t -> case t of
         Conjunction   -> tok Conjunction >> bexpr >> bexpr
         Disjunction   -> tok Disjunction >> bexpr >> bexpr
         _ | isRelop t -> relop >> expr >> expr
-        _             -> empty
+        _             -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 expr :: CompilerStateT ()
 expr = peekTok >>= \t -> case t of
@@ -111,7 +111,7 @@ expr = peekTok >>= \t -> case t of
        Divide       -> tok Divide >> expr >> expr
        Number     _ -> tokNum
        Identifier _ -> tokId
-       _            -> empty
+       _            -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
@@ -131,4 +131,4 @@ relop = peekTok >>= \t -> case t of
         GreaterThan  -> tok GreaterThan
         LessThan     -> tok LessThan
         NotEqual     -> tok NotEqual
-        _            -> empty
+        _            -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
