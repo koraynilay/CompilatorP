@@ -27,6 +27,14 @@ initialState = CompilerState
   , nextVarAddr = 0
   }
 
+parse :: [Token] -> [Either Instruction Label]
+parse ts = case execStateT prog $ initialState { tokens = ts } of
+                (Just s) -> instructions s
+                Nothing -> []
+
+parseDebug :: [Token] -> Maybe ((), CompilerState)
+parseDebug ts = runStateT prog $ initialState { tokens = ts }
+
 nextVarAddrM :: CompilerStateT Int
 nextVarAddrM = do
   s <- get
@@ -34,15 +42,21 @@ nextVarAddrM = do
   put s { nextVarAddr = addr + 1 }
   return addr
 
--- TODO: handle variable not declared
-getVarAddr :: String -> CompilerStateT Int
+getVarAddr :: String -> CompilerStateT (Maybe Int)
 getVarAddr varName = do
   s <- get
   let t = symbolTable s
-  case M.lookup varName t of
+  return $ M.lookup varName t
+
+getOrAddVarAddr :: String -> CompilerStateT Int
+getOrAddVarAddr varName = do
+  maybeAddr <- getVarAddr varName
+  case maybeAddr of
     Just addr -> return addr
     Nothing -> do
       newAddr <- nextVarAddrM
+      s <- get
+      let t = symbolTable s
       put s { symbolTable = M.insert varName newAddr t }
       return newAddr
 
@@ -51,7 +65,7 @@ newLabel = do
   s <- get
   let labelNumber = labelCounter s
   put $ s { labelCounter = labelNumber + 1 }
-  return $ Label $ "L" ++ show labelNumber ++ ":"
+  return $ Label $ "L" ++ show labelNumber
 
 getTok :: CompilerStateT Token
 getTok = do
@@ -84,131 +98,106 @@ tokNum = do
     Number n -> return t
     _ -> empty
 
--- prods
-
-prog :: CompilerStateT ()
-prog = do l <- newLabel
-          statlist l
-          emitL l
-          tok EOF
-          return ()
-
-statlist :: Label -> CompilerStateT ()
-statlist nextL = do snl <- newLabel
-                    stat snl
-                    emitL snl
-                    statlistp nextL
-
-statlistp :: Label -> CompilerStateT ()
-statlistp nextL = do tok Semicolon 
-                     snl <- newLabel
-                     stat snl
-                     emitL snl
-                     statlistp nextL
-              <|> emit (Goto nextL)
-
-stat :: Label -> CompilerStateT ()
-stat nextL = do (Identifier var) <- tokId
-                tok Assignment
-                assignv
-                varAddr <- getVarAddr var
-                emit (Istore varAddr)
-         <|> tok Print >> tok BracketOpen >> exprlist >> tok BracketClose >> emit InvokePrint >> emit (Goto nextL)
-         <|> do tok While
-                tok ParenOpen
-                bexprTrue <- newLabel
-                bexpr bexprTrue nextL
-                tok ParenClose
-                tok Do
-                emitL bexprTrue
-                stat nextL
-         <|> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
-         <|> tok CurlyOpen >> statlist >> tok CurlyClose
-
-assignv :: CompilerStateT ()
-assignv = do tok UserInput
-             emit InvokeRead
-      <|> expr
-
-caselist :: CompilerStateT ()
-caselist = caseitem >> caselistp
-
-caselistp :: CompilerStateT ()
-caselistp = caseitem >> caselistp
-        <|> return
-
-caseitem :: CompilerStateT ()
-caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> caseitemd
-
-caseitemd :: CompilerStateT ()
-caseitemd = tok Break <|> return
-
--- label true -> label false -> state
-bexpr :: Label -> Label -> CompilerStateT ()
-bexpr = do relop
-           expr
-           expr
-           emit
-
-expr :: CompilerStateT ()
-expr = tok Plus >> operands
-   <|> tok Minus >> expr >> expr
-   <|> tok Multiply >> operands
-   <|> tok Divide >> expr expr
-   <|> do (Number n) <- tokNum
-          emit (Ldc n)
-   <|> do (Identifier var) <- tokId
-          varAddr <- getVarAddr var
-          emit (Iload varAddr) -- TODO: handle variable not declared
-
-operands :: CompilerStateT ()
-operands = expr >> expr
-       <|> tok BracketOpen >> exprlist >> tok BracketOpen
-
--- plus :: CompilerStateT ()
--- plus = expr >> expr
---    <|> tok BracketOpen >> exprlist >> tok BracketOpen
--- 
--- mult :: CompilerStateT ()
--- mult = expr >> expr
---    <|> tok BracketOpen >> exprlist >> tok BracketOpen
-
-exprlist :: CompilerStateT ()
-exprlist = expr >> exprlistp
-
-exprlistp :: CompilerStateT ()
-exprlistp = tok Comma >> expr >> exprlistp
-        <|> return () -- () needed?
-
-relop :: CompilerStateT Instruction
-relop = tok GreaterEqual >> 
-
-
-
-
-
 -- TODO: use ins : instructions s and reverse at the end for efficiency
 emit :: Instruction -> CompilerStateT ()
 emit ins = modify $ \s -> s { instructions = instructions s ++ [Left ins] }
 emitL :: Label -> CompilerStateT ()
 emitL ins = modify $ \s -> s { instructions = instructions s ++ [Right ins] }
 
+-- prods
 
+prog :: CompilerStateT ()
+prog = (statlist >> tok EOF >> return ())
 
---  s <- get
---  case tokens s of
---    (Print:ts) -> expr >> getVarAddr var >>= \addr -> emit (Istore addr)
---    (Identifier var:Assignment:UserInput:ts) -> put (s { tokens = ts }) >> emit InvokeRead >> getVarAddr var >>= \addr -> emit (Istore addr)
---    (Identifier var:Assignment:ts) -> expr >> getVarAddr var >>= \addr -> emit (Istore addr)
+statlist :: CompilerStateT ()
+statlist = stat >> ((tok Semicolon >> statlist) <|> return ())
 
-  
+stat :: CompilerStateT ()
+stat = (do (Identifier var) <- tokId
+           varAddr <- getOrAddVarAddr var
+           tok Assignment
+           assignv
+           emit (Istore varAddr))
+   <|> (tok Print >> tok BracketOpen >> exprlist >> tok BracketClose >> emit InvokePrint)
+   <|> (do tok While
+           tok ParenOpen
+           startL <- newLabel
+           jumpTo <- newLabel
+           emitL startL
+           bexpr jumpTo
+           tok ParenClose
+           tok Do
+           stat
+           emit (Goto startL)
+           emitL jumpTo)
+   <|> (do tok Conditional
+           tok BracketOpen
+           defaultL <- newLabel
+           caselist defaultL
+           tok BracketClose
+           tok Default
+           emitL defaultL
+           stat)
+   <|> (tok CurlyOpen >> statlist >> tok CurlyClose >> return ())
 
+assignv :: CompilerStateT ()
+assignv = (tok UserInput >> emit InvokeRead)
+      <|> expr
 
---prog :: [Token] -> [Instruction]
---prog xs = endProg $ statlist xs
---
---endProg :: [Token] -> [Instruction]
---endProg (TokenSimple EOF:_) = []
---
---statlist :: [Token] -> [Instruction]
+caselist :: Label -> CompilerStateT ()
+caselist defaultL = caseitem defaultL >> (caselist defaultL <|> return ())
 
+caseitem :: Label -> CompilerStateT ()
+caseitem defaultL = do tok Case
+                       tok ParenOpen
+                       jumpTo <- newLabel
+                       bexpr jumpTo
+                       tok ParenClose
+                       tok Do
+                       stat
+                       caseitemd defaultL
+                       emitL jumpTo
+
+caseitemd :: Label -> CompilerStateT ()
+caseitemd defaultL = (tok Break >> emit (Goto defaultL))
+                 <|> return ()
+
+bexpr :: Label -> CompilerStateT ()
+bexpr jumpto = do jmpInstr <- relop
+                  expr
+                  expr
+                  emit (jmpInstr jumpto)
+--           <|> do tok Conjunction
+--                  bexpr jumpto jumpto_or
+--                  bexpr jumpto jumpto_or
+--           <|> do tok Disjunction
+--                  bexpr jumpto_or jumpto_or
+--                  bexpr jumpto    jumpto_or
+
+expr :: CompilerStateT ()
+expr = (tok Plus >> operands >> emit Iadd)
+   <|> (tok Minus >> expr >> expr >> emit Isub)
+   <|> (tok Multiply >> operands >> emit Imul)
+   <|> (tok Divide >> expr >> expr >> emit Idiv)
+   <|> (do (Number n) <- tokNum
+           emit (Ldc n))
+   <|> (do (Identifier var) <- tokId
+           maybeVarAddr <- getVarAddr var
+           case maybeVarAddr of
+             Just varAddr -> emit (Iload varAddr)
+             Nothing -> error ("variable " ++ var ++ " not declared"))
+
+operands :: CompilerStateT ()
+operands = (expr >> expr)
+       <|> (tok BracketOpen >> exprlist >> tok BracketClose >> return ())
+
+exprlist :: CompilerStateT ()
+exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
+
+relop :: CompilerStateT (Label -> Instruction)
+relop = (tok GreaterEqual >> return IfCmpLT)
+    <|> (tok LessEqual    >> return IfCmpGT)
+    <|> (tok Equal        >> return IfCmpNE)
+    <|> (tok GreaterThan  >> return IfCmpLE)
+    <|> (tok LessThan     >> return IfCmpGE)
+    <|> (tok NotEqual     >> return IfCmpEQ)
