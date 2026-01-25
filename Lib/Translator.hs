@@ -184,18 +184,21 @@ caseitemd defaultL = peekTok >>= \t -> case t of
                      _     -> return ()
 
 bexpr :: JumpData -> CompilerStateT ()
-bexpr jdata = (do jmpInstr <- relop (notinv jdata)
-                  expr
-                  expr
-                  let jloc = if notinv jdata then jbody jdata else jumpto jdata
-                  emit (jmpInstr jloc))
-          <|> (do tok Conjunction
-                  bexpr jdata
-                  bexpr jdata)
-          <|> (do tok Disjunction
-                  let jdata' = jdata { notinv = True }
-                  bexpr jdata'
-                  bexpr jdata')
+bexpr jdata = peekTok >>= \t -> case t of
+              Conjunction   -> do tok Conjunction
+                                  bexpr jdata
+                                  bexpr jdata
+              Disjunction   -> do tok Disjunction
+                                  let jdata' = jdata { notinv = True }
+                                  bexpr jdata'
+                                  bexpr jdata'
+              _ | isRelop t -> do jmpInstr <- relop (notinv jdata)
+                                  expr
+                                  expr
+                                  let jloc = if notinv jdata then jbody jdata else jumpto jdata
+                                  emit (jmpInstr jloc)
+              _             -> empty
+
 
 expr :: CompilerStateT ()
 expr = peekTok >>= \t -> case t of
