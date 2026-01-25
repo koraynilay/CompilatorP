@@ -1,4 +1,4 @@
-module Lib.Translator where
+module Lib.TranslatorNotLL1 where
 
 import Lib.Token
 import Lib.Lexer
@@ -61,6 +61,24 @@ newLabel = do
   modify $ \s -> s { labelCounter = labelNumber + 1 }
   return $ Label $ "L" ++ show labelNumber
 
+data JumpData = JumpData
+  { jumpto :: Label
+  , jbody :: Label
+  , notinv :: Bool }
+
+jumpData :: CompilerStateT JumpData
+jumpData = do
+  jumptoL <- newLabel
+  jbodyL  <- newLabel
+  return JumpData { jumpto = jumptoL, jbody = jbodyL, notinv = False }
+
+peekTok :: CompilerStateT Token
+peekTok = do
+  toks <- gets tokens
+  case toks of
+    (t:_) -> return t
+    [] -> empty
+
 getTok :: CompilerStateT Token
 getTok = do
   toks <- gets tokens
@@ -115,14 +133,15 @@ stat = (do (Identifier var) <- tokId
    <|> (do tok While
            tok ParenOpen
            startL <- newLabel
-           jumpTo <- newLabel
+           jdata <- jumpData
            emitL startL
-           bexpr jumpTo
+           bexpr jdata
            tok ParenClose
            tok Do
+           emitL (jbody jdata)
            stat
            emit (Goto startL)
-           emitL jumpTo)
+           emitL (jumpto jdata))
    <|> (do tok Conditional
            tok BracketOpen
            defaultL <- newLabel
@@ -143,29 +162,32 @@ caselist defaultL = caseitem defaultL >> (caselist defaultL <|> return ())
 caseitem :: Label -> CompilerStateT ()
 caseitem defaultL = do tok Case
                        tok ParenOpen
-                       jumpTo <- newLabel
-                       bexpr jumpTo
+                       jdata <- jumpData
+                       bexpr jdata
                        tok ParenClose
                        tok Do
+                       emitL (jbody jdata)
                        stat
                        caseitemd defaultL
-                       emitL jumpTo
+                       emitL (jumpto jdata)
 
 caseitemd :: Label -> CompilerStateT ()
 caseitemd defaultL = (tok Break >> emit (Goto defaultL))
                  <|> return ()
 
-bexpr :: Label -> CompilerStateT ()
-bexpr jumpto = do jmpInstr <- relop
+bexpr :: JumpData -> CompilerStateT ()
+bexpr jdata = (do jmpInstr <- relop (notinv jdata)
                   expr
                   expr
-                  emit (jmpInstr jumpto)
---           <|> do tok Conjunction
---                  bexpr jumpto jumpto_or
---                  bexpr jumpto jumpto_or
---           <|> do tok Disjunction
---                  bexpr jumpto_or jumpto_or
---                  bexpr jumpto    jumpto_or
+                  let jloc = if notinv jdata then jbody jdata else jumpto jdata
+                  emit (jmpInstr jloc))
+          <|> (do tok Conjunction
+                  bexpr jdata
+                  bexpr jdata)
+          <|> (do tok Disjunction
+                  let jdata' = jdata { notinv = True }
+                  bexpr jdata'
+                  bexpr jdata')
 
 expr :: CompilerStateT ()
 expr = (tok Plus >> operands >> emit Iadd)
@@ -187,10 +209,10 @@ operands = (expr >> expr)
 exprlist :: CompilerStateT ()
 exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
 
-relop :: CompilerStateT (Label -> Instruction)
-relop = (tok GreaterEqual >> return IfCmpLT)
-    <|> (tok LessEqual    >> return IfCmpGT)
-    <|> (tok Equal        >> return IfCmpNE)
-    <|> (tok GreaterThan  >> return IfCmpLE)
-    <|> (tok LessThan     >> return IfCmpGE)
-    <|> (tok NotEqual     >> return IfCmpEQ)
+relop :: Bool -> CompilerStateT (Label -> Instruction)
+relop notinv = (tok GreaterEqual >> return (if notinv then IfCmpGE else IfCmpLT))
+           <|> (tok LessEqual    >> return (if notinv then IfCmpLE else IfCmpGT))
+           <|> (tok Equal        >> return (if notinv then IfCmpEQ else IfCmpNE))
+           <|> (tok GreaterThan  >> return (if notinv then IfCmpGT else IfCmpLE))
+           <|> (tok LessThan     >> return (if notinv then IfCmpLT else IfCmpGE))
+           <|> (tok NotEqual     >> return (if notinv then IfCmpNE else IfCmpEQ))
