@@ -1,11 +1,10 @@
 module Instruction where
 
-data Label = Label String
-  deriving (Eq)
+newtype Label = Label String
+  deriving (Show, Eq)
 
-instance Show Label where
-  show :: Label -> String
-  show (Label l) = l ++ ":\n"
+labToJ :: Label -> String
+labToJ (Label l) = l ++ ":\n"
 
 data Instruction = Dup
                  | Pop
@@ -29,29 +28,28 @@ data Instruction = Dup
                  | Goto Label
                  | InvokePrint
                  | InvokeRead
-                   deriving (Eq)
+                   deriving (Show, Eq)
 
-instance Show Instruction where
-  show :: Instruction -> String
-  show Dup                 = " dup\n"
-  show Pop                 = " pop\n"
-  show Imul                = " imul\n"
-  show Ineg                = " ineg\n"
-  show Idiv                = " idiv\n"
-  show Iadd                = " iadd\n"
-  show Isub                = " isub\n"
-  show Ior                 = " ior\n"
-  show Iand                = " iand\n"
-  show (Ldc val)           = " ldc " ++ show val ++ "\n"
-  show (Istore addr)       = " istore " ++ show addr ++ "\n"
-  show (Iload addr)        = " iload " ++ show addr ++ "\n"
-  show (IfCmpEQ (Label l)) = " if_icmpeq " ++ l ++ "\n"
-  show (IfCmpLE (Label l)) = " if_icmple " ++ l ++ "\n"
-  show (IfCmpLT (Label l)) = " if_icmplt " ++ l ++ "\n"
-  show (IfCmpNE (Label l)) = " if_icmpne " ++ l ++ "\n"
-  show (IfCmpGE (Label l)) = " if_icmpge " ++ l ++ "\n"
-  show (IfCmpGT (Label l)) = " if_icmpgt " ++ l ++ "\n"
-  show (Ifne (Label l))    = " ifne " ++ l ++ "\n"
-  show (Goto (Label l))    = " goto " ++ l ++ "\n"
-  show InvokePrint         = " invokestatic Output/print(I)V\n"
-  show InvokeRead          = " invokestatic Output/read()I\n"
+insToJ :: Instruction -> String
+insToJ Dup                 = " dup\n"
+insToJ Pop                 = " pop\n"
+insToJ Imul                = " imul\n"
+insToJ Ineg                = " ineg\n"
+insToJ Idiv                = " idiv\n"
+insToJ Iadd                = " iadd\n"
+insToJ Isub                = " isub\n"
+insToJ Ior                 = " ior\n"
+insToJ Iand                = " iand\n"
+insToJ (Ldc val)           = " ldc " ++ show val ++ "\n"
+insToJ (Istore addr)       = " istore " ++ show addr ++ "\n"
+insToJ (Iload addr)        = " iload " ++ show addr ++ "\n"
+insToJ (IfCmpEQ (Label l)) = " if_icmpeq " ++ l ++ "\n"
+insToJ (IfCmpLE (Label l)) = " if_icmple " ++ l ++ "\n"
+insToJ (IfCmpLT (Label l)) = " if_icmplt " ++ l ++ "\n"
+insToJ (IfCmpNE (Label l)) = " if_icmpne " ++ l ++ "\n"
+insToJ (IfCmpGE (Label l)) = " if_icmpge " ++ l ++ "\n"
+insToJ (IfCmpGT (Label l)) = " if_icmpgt " ++ l ++ "\n"
+insToJ (Ifne (Label l))    = " ifne " ++ l ++ "\n"
+insToJ (Goto (Label l))    = " goto " ++ l ++ "\n"
+insToJ InvokePrint         = " invokestatic Output/print(I)V\n"
+insToJ InvokeRead          = " invokestatic Output/read()I\n"

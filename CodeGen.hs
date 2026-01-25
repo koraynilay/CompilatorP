@@ -2,12 +2,13 @@ module CodeGen where
 
 import Instruction
 
-data Code = Code (Either Instruction Label)
+type Code = [CodeLine]
 
-instance Show Code where
-  show :: Code -> String
-  show (Code (Left  i)) = show i
-  show (Code (Right l)) = show l
+type CodeLine = Either Instruction Label
+
+codeToJ :: CodeLine -> String
+codeToJ (Left  i) = insToJ i
+codeToJ (Right l) = labToJ l
 
 header :: String
 header = unlines
@@ -56,5 +57,5 @@ footer = unlines
   , ".end method"
   ]
 
-toJasmin :: [Code] -> String
-toJasmin xs = header ++ (foldl (++) "" $ map show xs) ++ footer
+toJasmin :: Code -> String
+toJasmin xs = header ++ (foldl (++) "" $ map codeToJ xs) ++ footer

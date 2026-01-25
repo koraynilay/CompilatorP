@@ -3,6 +3,7 @@ module Parser where
 import Token
 import Lexer
 import Instruction
+import CodeGen
 
 import qualified Data.Map as M
 import Control.Monad.State
@@ -13,7 +14,7 @@ type CompilerStateT = StateT CompilerState Maybe
 data CompilerState = CompilerState
   { labelCounter :: Int
   , tokens       :: [Token]
-  , instructions :: [Either Instruction Label]
+  , instructions :: Code
   , symbolTable  :: M.Map String Int
   , nextVarAddr :: Int
   } deriving (Show)
@@ -27,7 +28,7 @@ initialState = CompilerState
   , nextVarAddr = 0
   }
 
-parse :: [Token] -> [Either Instruction Label]
+parse :: [Token] -> Code
 parse ts = case execStateT prog $ initialState { tokens = ts } of
                 (Just s) -> reverse $ instructions s
                 Nothing -> []
