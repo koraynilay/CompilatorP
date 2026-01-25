@@ -1,4 +1,4 @@
-import Lexer
+import Lib.Lexer
 
 import System.Environment (getArgs, getProgName)
 

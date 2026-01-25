@@ -1,6 +1,6 @@
-import Token
-import ParserOnly
-import Lexer
+import Lib.Token
+import Lib.Parser
+import Lib.Lexer
 
 import System.Environment (getArgs, getProgName)
 

@@ -1,4 +1,4 @@
-module Parser where
+module Translator where
 
 import Token
 import Lexer

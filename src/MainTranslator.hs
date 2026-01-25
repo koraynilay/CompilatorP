@@ -1,7 +1,7 @@
-import Token
-import Parser
-import Lexer
-import CodeGen (toJasmin)
+import Lib.Token
+import Lib.Translator
+import Lib.Lexer
+import Lib.CodeGen (toJasmin)
 
 import System.Environment (getArgs, getProgName)
 

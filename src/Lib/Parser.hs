@@ -1,4 +1,4 @@
-module ParserOnly where
+module Parser where
 
 import Token
 import Lexer
