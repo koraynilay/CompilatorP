@@ -22,13 +22,5 @@ handleFiles (f:fs) = handleFile f >> handleFiles fs
 handleFile :: String -> IO ()
 handleFile fn = do f <- readFile fn
                    ts <- matchIO fn f
-                   --print ts
                    let r = parse ts
-                   --putStrLn $ fn ++ ": " ++ show r
                    putStr $ toJasmin r
---handleFile fn = readFile fn >>= matchIO fn >>= \x -> putStrLn (fn ++ ": " ++ show (parseDebug x))
---handleFile fn = do f <- readFile fn
---                   ts <- matchIO fn f
---                   print ts
---                   let r = parse ts
---                   putStrLn $ fn ++ ": " ++ show r
