@@ -83,3 +83,12 @@ tokenValue :: Token -> Maybe (Either String Integer)
 tokenValue (Identifier s) = Just $ Left s
 tokenValue (Number     n) = Just $ Right n
 tokenValue _              = Nothing
+
+isRelop :: Token -> Bool
+isRelop GreaterEqual = True
+isRelop LessEqual    = True
+isRelop Equal        = True
+isRelop GreaterThan  = True
+isRelop LessThan     = True
+isRelop NotEqual     = True
+isRelop _            = False

@@ -24,6 +24,13 @@ parse ts = case evalStateT prog $ initialState { tokens = ts } of
 parseDebug :: [Token] -> Maybe ((), CompilerState)
 parseDebug ts = runStateT prog $ initialState { tokens = ts }
 
+peekTok :: CompilerStateT Token
+peekTok = do
+  toks <- gets tokens
+  case toks of
+    (t:_) -> return t
+    [] -> empty
+
 getTok :: CompilerStateT Token
 getTok = do
   toks <- gets tokens
@@ -61,48 +68,66 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF)
 
 statlist :: CompilerStateT ()
-statlist = stat >> ((tok Semicolon >> statlist) <|> return ())
+statlist = stat >> peekTok >>= \t -> case t of
+                   Semicolon -> tok Semicolon >> statlist
+                   _         -> return ()
 
 stat :: CompilerStateT ()
-stat = (tokId >> tok Assignment >> assignv)
-   <|> (tok Print >> tok BracketOpen >> exprlist >> tok BracketClose)
-   <|> (tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat)
-   <|> (tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat)
-   <|> (tok CurlyOpen >> statlist >> tok CurlyClose)
+stat = peekTok >>= \t -> case t of
+       Identifier _ -> tokId >> tok Assignment >> assignv
+       Print        -> tok Print >> tok BracketOpen >> exprlist >> tok BracketClose
+       While        -> tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat
+       Conditional  -> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
+       CurlyOpen    -> tok CurlyOpen >> statlist >> tok CurlyClose
+       _            -> empty
 
 assignv :: CompilerStateT ()
-assignv = (tok UserInput) <|> expr
+assignv = peekTok >>= \t -> case t of
+          UserInput -> tok UserInput
+          _         -> expr
 
 caselist :: CompilerStateT ()
-caselist = caseitem >> (caselist <|> return ())
+caselist = caseitem >> peekTok >>= \t -> case t of
+                       Case -> caselist
+                       _    -> return ()
 
 caseitem :: CompilerStateT ()
-caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> (tok Break <|> return ())
+caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> peekTok >>= \t -> case t of
+                                                                                     Break -> tok Break
+                                                                                     _     -> return ()
 
 bexpr :: CompilerStateT ()
-bexpr = (relop >> expr >> expr)
-    <|> (tok Conjunction >> bexpr >> bexpr)
-    <|> (tok Disjunction >> bexpr >> bexpr)
+bexpr = peekTok >>= \t -> case t of
+        Conjunction   -> tok Conjunction >> bexpr >> bexpr
+        Disjunction   -> tok Disjunction >> bexpr >> bexpr
+        _ | isRelop t -> relop >> expr >> expr
 
 expr :: CompilerStateT ()
-expr = (tok Plus >> operands)
-   <|> (tok Minus >> expr >> expr)
-   <|> (tok Multiply >> operands)
-   <|> (tok Divide >> expr >> expr)
-   <|> (tokNum)
-   <|> (tokId)
+expr = peekTok >>= \t -> case t of
+       Plus         -> tok Plus >> operands
+       Minus        -> tok Minus >> expr >> expr
+       Multiply     -> tok Multiply >> operands
+       Divide       -> tok Divide >> expr >> expr
+       Number     _ -> tokNum
+       Identifier _ -> tokId
+       _            -> empty
 
 operands :: CompilerStateT ()
-operands = (expr >> expr)
-       <|> (tok BracketOpen >> exprlist >> tok BracketClose)
+operands = peekTok >>= \t -> case t of
+           BracketOpen -> tok BracketOpen >> exprlist >> tok BracketClose
+           _           -> expr >> expr
 
 exprlist :: CompilerStateT ()
-exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
+exprlist = expr >> peekTok >>= \t -> case t of
+                   Comma -> tok Comma >> exprlist
+                   _     -> return ()
 
 relop :: CompilerStateT ()
-relop = (tok GreaterEqual)
-    <|> (tok LessEqual)
-    <|> (tok Equal)
-    <|> (tok GreaterThan)
-    <|> (tok LessThan)
-    <|> (tok NotEqual)
+relop = peekTok >>= \t -> case t of
+        GreaterEqual -> tok GreaterEqual
+        LessEqual    -> tok LessEqual
+        Equal        -> tok Equal
+        GreaterThan  -> tok GreaterThan
+        LessThan     -> tok LessThan
+        NotEqual     -> tok NotEqual
+        _            -> empty
