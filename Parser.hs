@@ -29,7 +29,7 @@ initialState = CompilerState
 
 parse :: [Token] -> [Either Instruction Label]
 parse ts = case execStateT prog $ initialState { tokens = ts } of
-                (Just s) -> instructions s
+                (Just s) -> reverse $ instructions s
                 Nothing -> []
 
 parseDebug :: [Token] -> Maybe ((), CompilerState)
@@ -91,11 +91,10 @@ tokNum = do
     Number n -> return t
     _ -> empty
 
--- TODO: use ins : instructions s and reverse at the end for efficiency
 emit :: Instruction -> CompilerStateT ()
-emit ins = modify $ \s -> s { instructions = instructions s ++ [Left ins] }
+emit ins = modify $ \s -> s { instructions = Left ins : instructions s }
 emitL :: Label -> CompilerStateT ()
-emitL ins = modify $ \s -> s { instructions = instructions s ++ [Right ins] }
+emitL ins = modify $ \s -> s { instructions = Right ins : instructions s }
 
 -- prods
 
