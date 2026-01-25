@@ -10,22 +10,11 @@ import Control.Applicative
 
 type CompilerStateT = StateT CompilerState Maybe
 
-data CompilerState = CompilerState
-  { labelCounter :: Int
-  , tokens       :: [Token]
-  , instructions :: [Either Instruction Label]
-  , symbolTable  :: M.Map String Int
-  , nextVarAddr :: Int
-  } deriving (Show)
+data CompilerState = CompilerState { tokens :: [Token] }
+  deriving (Show)
 
 initialState :: CompilerState
-initialState = CompilerState
-  { labelCounter = 0
-  , tokens       = []
-  , instructions = []
-  , symbolTable  = M.empty
-  , nextVarAddr = 0
-  }
+initialState = CompilerState { tokens = [] }
 
 parse :: [Token] -> Bool
 parse ts = case evalStateT prog $ initialState { tokens = ts } of
@@ -35,38 +24,12 @@ parse ts = case evalStateT prog $ initialState { tokens = ts } of
 parseDebug :: [Token] -> Maybe ((), CompilerState)
 parseDebug ts = runStateT prog $ initialState { tokens = ts }
 
-nextVarAddrM :: CompilerStateT Int
-nextVarAddrM = do
-  s <- get
-  let addr = nextVarAddr s
-  put s { nextVarAddr = addr + 1 }
-  return addr
-
--- TODO: handle variable not declared
-getVarAddr :: String -> CompilerStateT Int
-getVarAddr varName = do
-  s <- get
-  let t = symbolTable s
-  case M.lookup varName t of
-    Just addr -> return addr
-    Nothing -> do
-      newAddr <- nextVarAddrM
-      put s { symbolTable = M.insert varName newAddr t }
-      return newAddr
-
-newLabel :: CompilerStateT Label
-newLabel = do
-  s <- get
-  let labelNumber = labelCounter s
-  put $ s { labelCounter = labelNumber + 1 }
-  return $ Label $ "L" ++ show labelNumber ++ ":"
-
 getTok :: CompilerStateT Token
 getTok = do
-  s <- get
-  case tokens s of
+  toks <- gets tokens
+  case toks of
     (t:ts) -> do
-      put (s { tokens = ts })
+      modify $ \s -> s { tokens = ts }
       return t
     [] -> empty
 
