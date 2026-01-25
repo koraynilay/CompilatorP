@@ -101,6 +101,7 @@ bexpr = peekTok >>= \t -> case t of
         Conjunction   -> tok Conjunction >> bexpr >> bexpr
         Disjunction   -> tok Disjunction >> bexpr >> bexpr
         _ | isRelop t -> relop >> expr >> expr
+        _             -> empty
 
 expr :: CompilerStateT ()
 expr = peekTok >>= \t -> case t of
