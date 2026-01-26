@@ -4,6 +4,7 @@ import Lib.Lexer
 import Lib.CodeGen (toJasmin)
 
 import System.Environment (getArgs, getProgName)
+import Control.DeepSeq
 
 usage :: String -> IO String
 usage s = return ("Usage: " ++ s ++ " FILE")
@@ -23,4 +24,4 @@ handleFile :: String -> IO ()
 handleFile fn = do f <- readFile fn
                    ts <- matchIO fn f
                    let r = parse ts
-                   putStr $ toJasmin r
+                   putStr $!! toJasmin r
