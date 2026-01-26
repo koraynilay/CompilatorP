@@ -11,7 +11,7 @@ import Lib.CompilerState (CompilerStateT
                          , tok, tokId, tokNum
                          , emit, emitL
                          , getOrAddVarAddr, getVarAddr
-                         , skipMany)
+                         , skipMany, skipSome)
 
 import Control.Applicative
 
@@ -76,7 +76,7 @@ assignv = (tok UserInput >> emit InvokeRead)
       <|> expr
 
 caselist :: Label -> CompilerStateT ()
-caselist defaultL = caseitem defaultL >> skipMany (caseitem defaultL)
+caselist defaultL = skipSome (caseitem defaultL)
 
 caseitem :: Label -> CompilerStateT ()
 caseitem defaultL = do tok Case

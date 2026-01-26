@@ -120,6 +120,9 @@ tokNum = do
 skipMany :: CompilerStateT () -> CompilerStateT ()
 skipMany = void . many
 
+skipSome :: CompilerStateT () -> CompilerStateT ()
+skipSome = void . some
+
 emit :: Instruction -> CompilerStateT ()
 emit ins = modify $ \s -> s { instructions = Left ins : instructions s }
 emitL :: Label -> CompilerStateT ()

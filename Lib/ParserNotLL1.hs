@@ -6,7 +6,7 @@ import Lib.Instruction
 import qualified Lib.CompilerState as CS
 import Lib.CompilerState (CompilerStateT
                          , getTok, peekTok
-                         , skipMany)
+                         , skipMany, skipSome)
 
 import Control.Applicative
 
@@ -42,7 +42,7 @@ assignv :: CompilerStateT ()
 assignv = (tok UserInput) <|> expr
 
 caselist :: CompilerStateT ()
-caselist = caseitem >> skipMany caseitem
+caselist = skipSome caseitem
 
 caseitem :: CompilerStateT ()
 caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> (tok Break <|> return ())
