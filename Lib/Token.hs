@@ -43,7 +43,43 @@ data Token = Number Integer | Identifier String | Print        | While
            | ParenClose     | BracketOpen       | BracketClose | CurlyOpen
            | CurlyClose     | Plus              | Minus        | Multiply
            | Divide         | Semicolon         | Comma        | EOF
-             deriving (Show, Eq)
+             deriving (Eq)
+
+instance Show Token where
+-- show the original thing the user wrote in the source code
+  show :: Token -> String
+  show (Number n)     = show n
+  show (Identifier s) = s
+  show Print          = "print"
+  show While          = "while"
+  show Do             = "do"
+  show Conditional    = "conditional"
+  show Case           = "case"
+  show Break          = "break"
+  show Default        = "default"
+  show UserInput      = "user"
+  show Assignment     = ":="
+  show Conjunction    = "&&"
+  show Disjunction    = "||"
+  show LessEqual      = "<="
+  show GreaterEqual   = ">="
+  show Equal          = "=="
+  show NotEqual       = "!="
+  show LessThan       = "<"
+  show GreaterThan    = ">"
+  show ParenOpen      = "("
+  show ParenClose     = ")"
+  show BracketOpen    = "["
+  show BracketClose   = "]"
+  show CurlyOpen      = "{"
+  show CurlyClose     = "}"
+  show Plus           = "+"
+  show Minus          = "-"
+  show Multiply       = "*"
+  show Divide         = "/"
+  show Semicolon      = ";"
+  show Comma          = ","
+  show EOF            = "EOF"
 
 getTokenName :: Token -> Int
 getTokenName (Number _)     = 256
