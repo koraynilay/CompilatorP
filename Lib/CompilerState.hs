@@ -8,6 +8,7 @@ import Lib.CodeGen
 import qualified Data.Map as M
 import Control.Monad.State
 import Control.Applicative
+import Control.Monad (void)
 
 type CompilerStateT = StateT CompilerState Maybe
 
@@ -115,6 +116,9 @@ tokNum = do
   case t of
     Number n -> return t
     _ -> empty
+
+skipMany :: CompilerStateT () -> CompilerStateT ()
+skipMany = void . many
 
 emit :: Instruction -> CompilerStateT ()
 emit ins = modify $ \s -> s { instructions = Left ins : instructions s }

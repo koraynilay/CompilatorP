@@ -6,14 +6,14 @@ import Lib.Instruction
 import Lib.CodeGen
 import qualified Lib.CompilerState as CS
 import Lib.CompilerState (CompilerStateT
-                         , getTok , peekTok
+                         , getTok, peekTok
                          , newLabel
-                         , tok , tokId , tokNum
+                         , tok, tokId, tokNum
                          , emit, emitL
-                         , getOrAddVarAddr , getVarAddr)
+                         , getOrAddVarAddr, getVarAddr
+                         , skipMany)
 
 import Control.Applicative
-import Control.Monad (void)
 
 data JumpData = JumpData
   { jumpto :: Label
@@ -40,7 +40,7 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF >> return ())
 
 statlist :: CompilerStateT ()
-statlist = stat >> void (many (tok Semicolon >> stat))
+statlist = stat >> skipMany (tok Semicolon >> stat)
 
 stat :: CompilerStateT ()
 stat = (do (Identifier var) <- tokId
@@ -76,7 +76,7 @@ assignv = (tok UserInput >> emit InvokeRead)
       <|> expr
 
 caselist :: Label -> CompilerStateT ()
-caselist defaultL = caseitem defaultL >> void (many (caseitem defaultL))
+caselist defaultL = caseitem defaultL >> skipMany (caseitem defaultL)
 
 caseitem :: Label -> CompilerStateT ()
 caseitem defaultL = do tok Case
@@ -126,8 +126,8 @@ operands inst = (expr >> expr >> emit inst)
             <|> (tok BracketOpen >> exprlist inst >> tok BracketClose >> return ())
 
 exprlist :: Instruction -> CompilerStateT ()
-exprlist InvokePrint = expr >> emit InvokePrint >> void (many (tok Comma >> expr >> emit InvokePrint))
-exprlist inst        = expr >> void (many (tok Comma >> expr >> emit inst))
+exprlist InvokePrint = expr >> emit InvokePrint >> skipMany (tok Comma >> expr >> emit InvokePrint)
+exprlist inst        = expr >> skipMany (tok Comma >> expr >> emit inst)
 
 relop :: Bool -> CompilerStateT (Label -> Instruction)
 relop notinv = (tok GreaterEqual >> return (if notinv then IfCmpGE else IfCmpLT))

@@ -5,10 +5,10 @@ import Lib.Lexer
 import Lib.Instruction
 import qualified Lib.CompilerState as CS
 import Lib.CompilerState (CompilerStateT
-                         , getTok, peekTok)
+                         , getTok, peekTok
+                         , skipMany)
 
 import Control.Applicative
-import Control.Monad (void)
 
 parse :: [Token] -> Bool
 parse ts = case CS.parse prog ts of
@@ -29,7 +29,7 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF)
 
 statlist :: CompilerStateT ()
-statlist = stat >> void (many (tok Semicolon >> stat))
+statlist = stat >> skipMany (tok Semicolon >> stat)
 
 stat :: CompilerStateT ()
 stat = (tokId >> tok Assignment >> assignv)
@@ -42,7 +42,7 @@ assignv :: CompilerStateT ()
 assignv = (tok UserInput) <|> expr
 
 caselist :: CompilerStateT ()
-caselist = caseitem >> void (many caseitem)
+caselist = caseitem >> skipMany caseitem
 
 caseitem :: CompilerStateT ()
 caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> (tok Break <|> return ())
@@ -65,7 +65,7 @@ operands = (expr >> expr)
        <|> (tok BracketOpen >> exprlist >> tok BracketClose)
 
 exprlist :: CompilerStateT ()
-exprlist = expr >> void (many (tok Comma >> expr))
+exprlist = expr >> skipMany (tok Comma >> expr)
 
 relop :: CompilerStateT ()
 relop = (tok GreaterEqual)
