@@ -70,8 +70,8 @@ stat = peekTok >>= \t -> case t of
                             caselist defaultL
                             tok BracketClose
                             tok Default
-                            emitL defaultL
                             stat
+                            emitL defaultL
        CurlyOpen      -> tok CurlyOpen >> statlist >> tok CurlyClose >> return ()
        _              -> empty
 

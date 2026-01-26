@@ -8,7 +8,7 @@
 <stat>        ::= ID := <assignv> { emit(istore ID.val) }
 <stat>        ::= print { exprlist.instruction = invokestatic print } [ <exprlist> ]
 <stat>        ::= { whilestart = newlabel(), emitlabel(whilestart) } while ( { bexpr.jumpto = newlabel(), bexpr.jbody = newlabel() } <bexpr> ) do { emitlabel(bexpr.jbody) } <stat> { emit(goto whilestart) } { emitlabel(bexpr.jumpto) }
-<stat>        ::= conditional { caselist.default = newlabel() } [ <caselist> ] default { emitlabel(caselist.default) } <stat>
+<stat>        ::= conditional { caselist.default = newlabel() } [ <caselist> ] default <stat> { emitlabel(caselist.default) }
 <stat>        ::= { <statlist> }
 
 <assignv>     ::= <expr>

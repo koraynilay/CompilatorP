@@ -67,8 +67,8 @@ stat = (do (Identifier var) <- tokId
            caselist defaultL
            tok BracketClose
            tok Default
-           emitL defaultL
-           stat)
+           stat
+           emitL defaultL)
    <|> (tok CurlyOpen >> statlist >> tok CurlyClose >> return ())
 
 assignv :: CompilerStateT ()
