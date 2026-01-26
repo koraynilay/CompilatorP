@@ -4,62 +4,13 @@ import Lib.Token
 import Lib.Lexer
 import Lib.Instruction
 import Lib.CodeGen
-
-import qualified Data.Map as M
-import Control.Monad.State
-import Control.Applicative
-
-type CompilerStateT = StateT CompilerState Maybe
-
-data CompilerState = CompilerState
-  { labelCounter :: Int
-  , tokens       :: [Token]
-  , instructions :: Code
-  , symbolTable  :: M.Map String Int
-  , nextVarAddr :: Int
-  } deriving (Show)
-
-initialState :: CompilerState
-initialState = CompilerState
-  { labelCounter = 0
-  , tokens       = []
-  , instructions = []
-  , symbolTable  = M.empty
-  , nextVarAddr = 0
-  }
-
-parse :: [Token] -> Code
-parse ts = case execStateT prog $ initialState { tokens = ts } of
-                (Just s) -> reverse $ instructions s
-                Nothing -> []
-
-parseDebug :: [Token] -> Maybe ((), CompilerState)
-parseDebug ts = runStateT prog $ initialState { tokens = ts }
-
-nextVarAddrM :: CompilerStateT Int
-nextVarAddrM = do
-  addr <- gets nextVarAddr
-  modify $ \s -> s { nextVarAddr = addr + 1 }
-  return addr
-
-getVarAddr :: String -> CompilerStateT (Maybe Int)
-getVarAddr varName = gets (M.lookup varName . symbolTable)
-
-getOrAddVarAddr :: String -> CompilerStateT Int
-getOrAddVarAddr varName = do
-  maybeAddr <- getVarAddr varName
-  case maybeAddr of
-    Just addr -> return addr
-    Nothing -> do
-      newAddr <- nextVarAddrM
-      modify $ \s -> s { symbolTable = M.insert varName newAddr (symbolTable s) }
-      return newAddr
-
-newLabel :: CompilerStateT Label
-newLabel = do
-  labelNumber <- gets labelCounter
-  modify $ \s -> s { labelCounter = labelNumber + 1 }
-  return $ Label $ "L" ++ show labelNumber
+import qualified Lib.CompilerState as CS
+import Lib.CompilerState (CompilerStateT, aroundErrTok
+                         , getTok , peekTok
+                         , newLabel
+                         , tok , tokId , tokNum
+                         , emit, emitL
+                         , getOrAddVarAddr , getVarAddr)
 
 data JumpData = JumpData
   { jumpto :: Label
@@ -72,48 +23,13 @@ jumpData = do
   jbodyL  <- newLabel
   return JumpData { jumpto = jumptoL, jbody = jbodyL, notinv = False }
 
-peekTok :: CompilerStateT Token
-peekTok = do
-  toks <- gets tokens
-  case toks of
-    (t:_) -> return t
-    [] -> empty
+parse :: [Token] -> Code
+parse ts = case CS.parse prog ts of
+                (Just ((),s)) -> reverse $ CS.instructions s
+                Nothing -> []
 
-getTok :: CompilerStateT Token
-getTok = do
-  toks <- gets tokens
-  case toks of
-    (t:ts) -> do
-      modify $ \s -> s { tokens = ts }
-      return t
-    [] -> empty
-
-sat :: (Token -> Bool) -> CompilerStateT Token
-sat p = do
-  t <- getTok
-  if p t then return t else empty
-
-tok :: Token -> CompilerStateT Token
-tok t = sat (== t)
-
-tokId :: CompilerStateT Token
-tokId = do
-  t <- getTok
-  case t of
-    Identifier var -> return t
-    _ -> empty
-
-tokNum :: CompilerStateT Token
-tokNum = do
-  t <- getTok
-  case t of
-    Number n -> return t
-    _ -> empty
-
-emit :: Instruction -> CompilerStateT ()
-emit ins = modify $ \s -> s { instructions = Left ins : instructions s }
-emitL :: Label -> CompilerStateT ()
-emitL ins = modify $ \s -> s { instructions = Right ins : instructions s }
+parseDebug :: [Token] -> Maybe ((), CS.CompilerState)
+parseDebug ts = CS.parse prog ts
 
 -- prods
 

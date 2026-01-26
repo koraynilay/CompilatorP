@@ -3,57 +3,24 @@ module Lib.Parser where
 import Lib.Token
 import Lib.Lexer
 import Lib.Instruction
+import qualified Lib.CompilerState as CS
+import Lib.CompilerState (CompilerStateT, aroundErrTok
+                         , getTok, peekTok)
 
-import qualified Data.Map as M
-import Control.Monad.State
 import Control.Applicative
 
-type CompilerStateT = StateT CompilerState Maybe
-
-data CompilerState = CompilerState { tokens :: [Token] }
-  deriving (Show)
-
-initialState :: CompilerState
-initialState = CompilerState { tokens = [] }
-
 parse :: [Token] -> Bool
-parse ts = case evalStateT prog $ initialState { tokens = ts } of
-                Just x -> True
+parse ts = case CS.parse prog ts of
+                Just _ -> True
                 Nothing -> False
 
-parseDebug :: [Token] -> Maybe ((), CompilerState)
-parseDebug ts = runStateT prog $ initialState { tokens = ts }
+parseDebug :: [Token] -> Maybe ((), CS.CompilerState)
+parseDebug ts = CS.parse prog ts
 
-getTok :: CompilerStateT Token
-getTok = do
-  toks <- gets tokens
-  case toks of
-    (t:ts) -> do
-      modify $ \s -> s { tokens = ts }
-      return t
-    [] -> empty
-
-sat :: (Token -> Bool) -> CompilerStateT ()
-sat p = do
-  t <- getTok
-  if p t then return () else empty
-
-tok :: Token -> CompilerStateT ()
-tok t = sat (== t)
-
-tokId :: CompilerStateT ()
-tokId = do
-  t <- getTok
-  case t of
-    Identifier var -> return ()
-    _ -> empty
-
-tokNum :: CompilerStateT ()
-tokNum = do
-  t <- getTok
-  case t of
-    Number n -> return ()
-    _ -> empty
+sat p = CS.sat p >> return ()
+tok t = CS.tok t >> return ()
+tokId = CS.tokId >> return ()
+tokNum = CS.tokNum >> return ()
 
 -- prods
 
