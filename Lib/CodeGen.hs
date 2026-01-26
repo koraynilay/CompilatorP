@@ -6,13 +6,13 @@ type Code = [CodeLine]
 
 type CodeLine = Either Instruction Label
 
-codeToJ :: CodeLine -> String
-codeToJ (Left  i) = insToJ i
-codeToJ (Right l) = labToJ l
+codeToJ :: String -> CodeLine -> String
+codeToJ c (Left  i) = insToJ c i
+codeToJ _ (Right l) = labToJ   l
 
-header :: String
-header = unlines
-  [ ".class public Output"
+header :: String -> String
+header className = unlines
+  [ ".class public " ++ className
   , ".super java/lang/Object"
   , ""
   , ".method public <init>()V"
@@ -46,16 +46,16 @@ header = unlines
   , " .limit locals 256"
   ]
 
-footer :: String
-footer = unlines
+footer :: String -> String
+footer className = unlines
   [ " return"
   , ".end method"
   , ""
   , ".method public static main([Ljava/lang/String;)V"
-  , " invokestatic Output/run()V"
+  , " invokestatic " ++ className ++ "/run()V"
   , " return"
   , ".end method"
   ]
 
-toJasmin :: Code -> String
-toJasmin xs = header ++ (foldl (++) "" $ map codeToJ xs) ++ footer
+toJasmin :: String -> Code -> String
+toJasmin c xs = header c ++ (foldl (++) "" $ map (codeToJ c) xs) ++ footer c
