@@ -1,10 +1,10 @@
-module Lib.Parser where
+module Lib.ParserNotLL1 where
 
 import Lib.Token
 import Lib.Lexer
 import Lib.Instruction
 import qualified Lib.CompilerState as CS
-import Lib.CompilerState (CompilerStateT
+import Lib.CompilerState (CompilerStateT, setErrorAt
                          , getTok, peekTok)
 
 import Control.Applicative
@@ -36,7 +36,7 @@ stat = (tokId >> tok Assignment >> assignv)
    <|> (tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat)
    <|> (tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat)
    <|> (tok CurlyOpen >> statlist >> tok CurlyClose)
-   <|> (do t <- getTok; error ("unexpected token: " ++ show t))
+   <|> (getTok >>= setErrorAt)
 
 assignv :: CompilerStateT ()
 assignv = (tok UserInput) <|> expr
@@ -51,7 +51,7 @@ bexpr :: CompilerStateT ()
 bexpr = (relop >> expr >> expr)
     <|> (tok Conjunction >> bexpr >> bexpr)
     <|> (tok Disjunction >> bexpr >> bexpr)
-    <|> (do t <- getTok; error ("unexpected token: " ++ show t))
+    <|> (getTok >>= setErrorAt)
 
 expr :: CompilerStateT ()
 expr = (tok Plus >> operands)
@@ -60,7 +60,7 @@ expr = (tok Plus >> operands)
    <|> (tok Divide >> expr >> expr)
    <|> (tokNum)
    <|> (tokId)
-   <|> (do t <- getTok; error ("unexpected token: " ++ show t))
+   <|> (getTok >>= setErrorAt)
 
 operands :: CompilerStateT ()
 operands = (expr >> expr)
@@ -76,4 +76,4 @@ relop = (tok GreaterEqual)
     <|> (tok GreaterThan)
     <|> (tok LessThan)
     <|> (tok NotEqual)
-    <|> (do t <- getTok; error ("unexpected token: " ++ show t))
+    <|> (getTok >>= setErrorAt)

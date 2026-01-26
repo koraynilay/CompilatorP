@@ -18,6 +18,7 @@ data CompilerState = CompilerState
   , instructions :: Code
   , symbolTable  :: M.Map String Int
   , nextVarAddr  :: Int
+  , errorAtTok   :: Token
   } deriving (Show)
 
 initialState :: CompilerState
@@ -27,7 +28,8 @@ initialState = CompilerState
   , readTokens   = []
   , instructions = []
   , symbolTable  = M.empty
-  , nextVarAddr = 0
+  , nextVarAddr  = 0
+  , errorAtTok   = EOF
   }
 
 -- first grammar function -> tokens -> resulting state
@@ -120,3 +122,6 @@ emit :: Instruction -> CompilerStateT ()
 emit ins = modify $ \s -> s { instructions = Left ins : instructions s }
 emitL :: Label -> CompilerStateT ()
 emitL ins = modify $ \s -> s { instructions = Right ins : instructions s }
+
+setErrorAt :: Token -> CompilerStateT ()
+setErrorAt t = modify $ \s -> s { errorAtTok = t }
