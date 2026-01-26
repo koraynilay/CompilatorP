@@ -1,0 +1,32 @@
+<prog>       ::=  <statlist> EOF
+
+<statlist>   ::=  <stat> <statlistp>
+
+<statlistp>  ::=  ; <stat> <statlistp>  |  e
+
+<stat>       ::=  print [ <exprlist> ]
+              |   ID := <expr>
+              |   ID := user
+              |   while ( <bexpr> ) do <stat>
+              |   conditional [ <caselist> ] default <stat>
+              |   { <statlist> }
+
+<caselist>   ::=  <caseitem> <caselistp>
+
+<caselistp>  ::=  <caseitem> <caselistp>  |  e
+
+<caseitem>   ::=  case ( <bexpr> ) do <stat> break
+              |   case ( <bexpr> ) do <stat>
+
+<bexpr>      ::=  <relop> <expr> <expr>
+
+<expr>       ::=  + <expr> <expr>  |  - <expr> <expr>
+              |   * <expr> <expr>  |  / <expr> <expr>
+              |   + [ <exprlist> ] |  * [ <exprlist> ]
+              |   NUM  |  ID
+
+<exprlist>   ::=  <expr> <exprlistp>
+
+<exprlistp>  ::=  , <expr> <exprlistp>  |  e
+
+<relop>      ::=  >= | <= | == | > | < | !=

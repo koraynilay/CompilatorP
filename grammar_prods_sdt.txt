@@ -1,0 +1,52 @@
+<prog>        ::= <statlist> EOF
+
+<statlist>    ::= <stat> <statlistp>
+
+<statlistp>   ::= ; <stat> <statlistp>
+<statlistp>   ::= e
+
+<stat>        ::= ID := <assignv> { emit(istore ID.val) }
+<stat>        ::= print [ <exprlist> ] { emit(invokestatic print) }
+<stat>        ::= { whilestart = newlabel(), emitlabel(whilestart) } while ( { bexpr.jumpto = newlabel(), bexpr.jbody = newlabel() } <bexpr> ) do { emitlabel(bexpr.jbody) } <stat> { emit(goto whilestart) } { emitlabel(bexpr.jumpto) }
+<stat>        ::= conditional { caselist.default = newlabel() } [ <caselist> ] default { emitlabel(caselist.default) } <stat>
+<stat>        ::= { <statlist> }
+
+<assignv>     ::= <expr>
+<assignv>     ::= user { emit(invokestatic read) }
+
+<caselist>    ::= { caseitem.default = caselist.default, caselistp.default = caselist.default } <caseitem> <caselistp>
+
+<caselistp>   ::= { caseitem.default = caselistp.default, caselistp1.default = caselistp.default } <caseitem> <caselistp1>
+<caselistp>   ::= e
+
+<caseitem>    ::= case ( { bexpr.jumpto = newlabel(), bexpr.jbody = newlabel() } <bexpr> ) do { emitlabel(bexpr.jbody) } <stat> <caseitemd> { emitlabel(bexpr.jumpto) }
+
+<caseitemd>   ::= break { emit(goto caseitemd.default) }
+<caseitemd>   ::= e
+
+<bexpr>       ::= { relop.notinv = bexpr.notinv } <relop> <expr> <expr> { emit(relop.val bexpr.jumpto) }
+<bexpr>       ::= && { bexpr1.notinv = False, bexpr1.jumpto = bexpr.jumpto, bexpr1.jbody = bexpr.jbody, bexpr2.notinv = False, bexpr2.jumpto = bexpr.jumpto, bexpr2.jbody = bexpr.jbody } <bexpr1> <bexpr2>
+<bexpr>       ::= || { bexpr1.notinv = True,  bexpr1.jumpto = bexpr.jumpto, bexpr1.jbody = bexpr.jbody, bexpr2.notinv = True,  bexpr2.jumpto = bexpr.jumpto, bexpr2.jbody = bexpr.jbody } <bexpr1> <bexpr2>
+
+<expr>        ::= + <operands> { emit(iadd) }
+<expr>        ::= - <expr> <expr> { emit(isub) }
+<expr>        ::= * <operands> { emit(imul) }
+<expr>        ::= / <expr> <expr> { emit(idiv) }
+<expr>        ::= NUM { emit(ldc NUM.val }
+<expr>        ::= ID { emit(iload ID.val }
+
+<operands>    ::= <expr> <expr>
+<operands>    ::= [ <exprlist> ]
+
+<exprlist>    ::= <expr> <exprlistp>
+
+<exprlistp>   ::= , <expr> <exprlistp>
+<exprlistp>   ::= e
+
+-- inverted
+<relop>       ::= >= { if relop.notinv relop.val = if_icmpge else relop.val = if_icmplt }
+<relop>       ::= <= { if relop.notinv relop.val = if_icmple else relop.val = if_icmpgt }
+<relop>       ::= == { if relop.notinv relop.val = if_icmpeq else relop.val = if_icmpne }
+<relop>       ::= >  { if relop.notinv relop.val = if_icmpgt else relop.val = if_icmple }
+<relop>       ::= <  { if relop.notinv relop.val = if_icmplt else relop.val = if_icmpge }
+<relop>       ::= != { if relop.notinv relop.val = if_icmpne else relop.val = if_icmpeq }
