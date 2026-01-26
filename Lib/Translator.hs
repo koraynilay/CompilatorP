@@ -70,7 +70,7 @@ stat = peekTok >>= \t -> case t of
                             emitL defaultL
                             stat
        CurlyOpen      -> tok CurlyOpen >> statlist >> tok CurlyClose >> return ()
-       _              -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
+       _              -> aroundErrTok >>= \ar -> error ("unexpected token: " ++ show t ++ " around " ++ ar)
 
 assignv :: CompilerStateT ()
 assignv = peekTok >>= \t -> case t of
@@ -113,7 +113,7 @@ bexpr jdata = peekTok >>= \t -> case t of
                                   expr
                                   let jloc = if notinv jdata then jbody jdata else jumpto jdata
                                   emit (jmpInstr jloc)
-              _             -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
+              _             -> aroundErrTok >>= \ar -> error ("unexpected token: " ++ show t ++ " around " ++ ar)
 
 
 expr :: CompilerStateT ()
@@ -129,7 +129,7 @@ expr = peekTok >>= \t -> case t of
                             case maybeVarAddr of
                               Just varAddr -> emit (Iload varAddr)
                               Nothing -> error ("variable " ++ var ++ " not declared")
-       _              -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
+       _              -> aroundErrTok >>= \ar -> error ("unexpected token: " ++ show t ++ " around " ++ ar)
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
@@ -149,4 +149,4 @@ relop notinv = peekTok >>= \t -> case t of
                GreaterThan  -> tok GreaterThan  >> return (if notinv then IfCmpGT else IfCmpLE)
                LessThan     -> tok LessThan     >> return (if notinv then IfCmpLT else IfCmpGE)
                NotEqual     -> tok NotEqual     >> return (if notinv then IfCmpNE else IfCmpEQ)
-               _            -> getTok >>= \nt -> error ("unexpected token: " ++ show t ++ " before " ++ show nt)
+               _            -> aroundErrTok >>= \ar -> error ("unexpected token: " ++ show t ++ " around " ++ ar)

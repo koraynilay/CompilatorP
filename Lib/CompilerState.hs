@@ -120,3 +120,13 @@ emit :: Instruction -> CompilerStateT ()
 emit ins = modify $ \s -> s { instructions = Left ins : instructions s }
 emitL :: Label -> CompilerStateT ()
 emitL ins = modify $ \s -> s { instructions = Right ins : instructions s }
+
+aroundErrTok :: CompilerStateT String
+aroundErrTok = peekLastTok >>= \maybeTok -> case maybeTok of
+               Just before -> do unexpected <- getTok
+                                 after      <- getTok
+                                 return $ show before ++ show unexpected ++ show after
+               Nothing     -> do unexpected <- getTok
+                                 after      <- getTok
+                                 afterafter <- getTok
+                                 return $ show unexpected ++ show after ++ show afterafter
