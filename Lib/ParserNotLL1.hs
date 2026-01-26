@@ -8,6 +8,7 @@ import Lib.CompilerState (CompilerStateT
                          , getTok, peekTok)
 
 import Control.Applicative
+import Control.Monad (void)
 
 parse :: [Token] -> Bool
 parse ts = case CS.parse prog ts of
@@ -28,7 +29,7 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF)
 
 statlist :: CompilerStateT ()
-statlist = stat >> ((tok Semicolon >> statlist) <|> return ())
+statlist = stat >> void (many (tok Semicolon >> stat))
 
 stat :: CompilerStateT ()
 stat = (tokId >> tok Assignment >> assignv)
@@ -41,7 +42,7 @@ assignv :: CompilerStateT ()
 assignv = (tok UserInput) <|> expr
 
 caselist :: CompilerStateT ()
-caselist = caseitem >> (caselist <|> return ())
+caselist = caseitem >> void (many caseitem)
 
 caseitem :: CompilerStateT ()
 caseitem = tok Case >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat >> (tok Break <|> return ())
@@ -64,7 +65,7 @@ operands = (expr >> expr)
        <|> (tok BracketOpen >> exprlist >> tok BracketClose)
 
 exprlist :: CompilerStateT ()
-exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
+exprlist = expr >> void (many (tok Comma >> expr))
 
 relop :: CompilerStateT ()
 relop = (tok GreaterEqual)

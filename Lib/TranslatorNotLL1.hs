@@ -40,7 +40,7 @@ prog :: CompilerStateT ()
 prog = (statlist >> tok EOF >> return ())
 
 statlist :: CompilerStateT ()
-statlist = stat >> ((tok Semicolon >> statlist) <|> return ())
+statlist = stat >> void (many (tok Semicolon >> stat))
 
 stat :: CompilerStateT ()
 stat = (do (Identifier var) <- tokId
@@ -76,7 +76,7 @@ assignv = (tok UserInput >> emit InvokeRead)
       <|> expr
 
 caselist :: Label -> CompilerStateT ()
-caselist defaultL = caseitem defaultL >> (caselist defaultL <|> return ())
+caselist defaultL = caseitem defaultL >> void (many (caseitem defaultL))
 
 caseitem :: Label -> CompilerStateT ()
 caseitem defaultL = do tok Case
