@@ -13,6 +13,7 @@ import Lib.CompilerState (CompilerStateT
                          , getOrAddVarAddr , getVarAddr)
 
 import Control.Applicative
+import Control.Monad (when)
 
 data JumpData = JumpData
   { jumpto :: Label
@@ -50,7 +51,7 @@ stat = peekTok >>= \t -> case t of
                             tok Assignment
                             assignv
                             emit (Istore varAddr)
-       Print          -> tok Print >> tok BracketOpen >> exprlist >> tok BracketClose >> emit InvokePrint
+       Print          -> tok Print >> tok BracketOpen >> exprlist True >> tok BracketClose >> return ()
        While          -> do tok While
                             tok ParenOpen
                             startL <- newLabel
@@ -135,13 +136,13 @@ expr = peekTok >>= \t -> case t of
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
-           BracketOpen -> tok BracketOpen >> exprlist >> tok BracketClose >> return ()
+           BracketOpen -> tok BracketOpen >> exprlist False >> tok BracketClose >> return ()
            _           -> expr >> expr
 
-exprlist :: CompilerStateT ()
-exprlist = expr >> peekTok >>= \t -> case t of
-                   Comma -> tok Comma >> exprlist
-                   _     -> return ()
+exprlist :: Bool -> CompilerStateT ()
+exprlist print = expr >> when print (emit InvokePrint) >> peekTok >>= \t -> case t of
+                                                          Comma -> tok Comma >> exprlist print
+                                                          _     -> return ()
 
 relop :: Bool -> CompilerStateT (Label -> Instruction)
 relop notinv = peekTok >>= \t -> case t of

@@ -6,7 +6,7 @@
 <statlistp>   ::= e
 
 <stat>        ::= ID := <assignv> { emit(istore ID.val) }
-<stat>        ::= print [ <exprlist> ] { emit(invokestatic print) }
+<stat>        ::= print { exprlist.print = True } [ <exprlist> ]
 <stat>        ::= { whilestart = newlabel(), emitlabel(whilestart) } while ( { bexpr.jumpto = newlabel(), bexpr.jbody = newlabel() } <bexpr> ) do { emitlabel(bexpr.jbody) } <stat> { emit(goto whilestart) } { emitlabel(bexpr.jumpto) }
 <stat>        ::= conditional { caselist.default = newlabel() } [ <caselist> ] default { emitlabel(caselist.default) } <stat>
 <stat>        ::= { <statlist> }
@@ -38,9 +38,9 @@
 <operands>    ::= <expr> <expr>
 <operands>    ::= [ <exprlist> ]
 
-<exprlist>    ::= <expr> <exprlistp>
+<exprlist>    ::= <expr> { if exprlist.print emit(invokestatic print), exprlistp.print = exprlist.print } <exprlistp>
 
-<exprlistp>   ::= , <expr> <exprlistp>
+<exprlistp>   ::= , <expr> { if exprlist.print emit(invokestatic print), exprlistp.print = exprlist.print, exprlistp1.print = exprlist.print } <exprlistp1>
 <exprlistp>   ::= e
 
 -- inverted

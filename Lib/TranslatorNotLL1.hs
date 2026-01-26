@@ -13,6 +13,7 @@ import Lib.CompilerState (CompilerStateT
                          , getOrAddVarAddr , getVarAddr)
 
 import Control.Applicative
+import Control.Monad (when)
 
 data JumpData = JumpData
   { jumpto :: Label
@@ -47,7 +48,7 @@ stat = (do (Identifier var) <- tokId
            tok Assignment
            assignv
            emit (Istore varAddr))
-   <|> (tok Print >> tok BracketOpen >> exprlist >> tok BracketClose >> emit InvokePrint)
+   <|> (tok Print >> tok BracketOpen >> exprlist True >> tok BracketClose >> return ())
    <|> (do tok While
            tok ParenOpen
            startL <- newLabel
@@ -122,10 +123,10 @@ expr = (tok Plus >> operands >> emit Iadd)
 
 operands :: CompilerStateT ()
 operands = (expr >> expr)
-       <|> (tok BracketOpen >> exprlist >> tok BracketClose >> return ())
+       <|> (tok BracketOpen >> exprlist False >> tok BracketClose >> return ())
 
-exprlist :: CompilerStateT ()
-exprlist = expr >> ((tok Comma >> exprlist) <|> return ())
+exprlist :: Bool -> CompilerStateT ()
+exprlist print = expr >> when print (emit InvokePrint) >> ((tok Comma >> exprlist print) <|> return ())
 
 relop :: Bool -> CompilerStateT (Label -> Instruction)
 relop notinv = (tok GreaterEqual >> return (if notinv then IfCmpGE else IfCmpLT))
