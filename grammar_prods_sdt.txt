@@ -6,7 +6,7 @@
 <statlistp>   ::= e
 
 <stat>        ::= ID := <assignv> { emit(istore ID.val) }
-<stat>        ::= print { exprlist.print = True } [ <exprlist> ]
+<stat>        ::= print { exprlist.instruction = invokestatic print } [ <exprlist> ]
 <stat>        ::= { whilestart = newlabel(), emitlabel(whilestart) } while ( { bexpr.jumpto = newlabel(), bexpr.jbody = newlabel() } <bexpr> ) do { emitlabel(bexpr.jbody) } <stat> { emit(goto whilestart) } { emitlabel(bexpr.jumpto) }
 <stat>        ::= conditional { caselist.default = newlabel() } [ <caselist> ] default { emitlabel(caselist.default) } <stat>
 <stat>        ::= { <statlist> }
@@ -28,19 +28,24 @@
 <bexpr>       ::= && { bexpr1.notinv = False, bexpr1.jumpto = bexpr.jumpto, bexpr1.jbody = bexpr.jbody, bexpr2.notinv = False, bexpr2.jumpto = bexpr.jumpto, bexpr2.jbody = bexpr.jbody } <bexpr1> <bexpr2>
 <bexpr>       ::= || { bexpr1.notinv = True,  bexpr1.jumpto = bexpr.jumpto, bexpr1.jbody = bexpr.jbody, bexpr2.notinv = True,  bexpr2.jumpto = bexpr.jumpto, bexpr2.jbody = bexpr.jbody } <bexpr1> <bexpr2>
 
-<expr>        ::= + <operands> { emit(iadd) }
+<expr>        ::= + { operands.instruction = iadd } <operands>
 <expr>        ::= - <expr> <expr> { emit(isub) }
-<expr>        ::= * <operands> { emit(imul) }
+<expr>        ::= * { operands.instruction = imul } <operands>
 <expr>        ::= / <expr> <expr> { emit(idiv) }
 <expr>        ::= NUM { emit(ldc NUM.val }
 <expr>        ::= ID { emit(iload ID.val }
 
-<operands>    ::= <expr> <expr>
+<operands>    ::= <expr> <expr> { emit(operands.instruction) }
 <operands>    ::= [ <exprlist> ]
 
-<exprlist>    ::= <expr> { if exprlist.print emit(invokestatic print), exprlistp.print = exprlist.print } <exprlistp>
+-- uses pattern matching for `exprlist InvokePrint` in the translator
+<pexprlist>    ::= <expr> { emit(invokestatic print) } <pexprlistp>
+<pexprlistp>   ::= , <expr> { emit(invokestatic print) } <pexprlistp>
+<pexprlistp>   ::= e
 
-<exprlistp>   ::= , <expr> { if exprlist.print emit(invokestatic print), exprlistp.print = exprlist.print, exprlistp1.print = exprlist.print } <exprlistp1>
+<exprlist>    ::= <expr> <exprlistp>
+
+<exprlistp>   ::= , <expr> { emit(exprlist.instruction), exprlist1.instruction = exprlist.instruction } <exprlistp1>
 <exprlistp>   ::= e
 
 -- inverted

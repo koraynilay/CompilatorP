@@ -13,7 +13,7 @@ import Lib.CompilerState (CompilerStateT
                          , getOrAddVarAddr , getVarAddr)
 
 import Control.Applicative
-import Control.Monad (when)
+import Control.Monad (void)
 
 data JumpData = JumpData
   { jumpto :: Label
@@ -48,7 +48,7 @@ stat = (do (Identifier var) <- tokId
            tok Assignment
            assignv
            emit (Istore varAddr))
-   <|> (tok Print >> tok BracketOpen >> exprlist True >> tok BracketClose >> return ())
+   <|> (tok Print >> tok BracketOpen >> exprlist InvokePrint >> tok BracketClose >> return ())
    <|> (do tok While
            tok ParenOpen
            startL <- newLabel
@@ -109,9 +109,9 @@ bexpr jdata = (do jmpInstr <- relop (notinv jdata)
                   bexpr jdata')
 
 expr :: CompilerStateT ()
-expr = (tok Plus >> operands >> emit Iadd)
+expr = (tok Plus >> operands Iadd >> return ())
    <|> (tok Minus >> expr >> expr >> emit Isub)
-   <|> (tok Multiply >> operands >> emit Imul)
+   <|> (tok Multiply >> operands Imul >> return ())
    <|> (tok Divide >> expr >> expr >> emit Idiv)
    <|> (do (Number n) <- tokNum
            emit (Ldc n))
@@ -121,12 +121,13 @@ expr = (tok Plus >> operands >> emit Iadd)
              Just varAddr -> emit (Iload varAddr)
              Nothing -> error ("variable " ++ var ++ " not declared"))
 
-operands :: CompilerStateT ()
-operands = (expr >> expr)
-       <|> (tok BracketOpen >> exprlist False >> tok BracketClose >> return ())
+operands :: Instruction -> CompilerStateT ()
+operands inst = (expr >> expr >> emit inst)
+            <|> (tok BracketOpen >> exprlist inst >> tok BracketClose >> return ())
 
-exprlist :: Bool -> CompilerStateT ()
-exprlist print = expr >> when print (emit InvokePrint) >> ((tok Comma >> exprlist print) <|> return ())
+exprlist :: Instruction -> CompilerStateT ()
+exprlist InvokePrint = expr >> emit InvokePrint >> void (many (tok Comma >> expr >> emit InvokePrint))
+exprlist inst        = expr >> void (many (tok Comma >> expr >> emit inst))
 
 relop :: Bool -> CompilerStateT (Label -> Instruction)
 relop notinv = (tok GreaterEqual >> return (if notinv then IfCmpGE else IfCmpLT))

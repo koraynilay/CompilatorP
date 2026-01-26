@@ -51,7 +51,7 @@ stat = peekTok >>= \t -> case t of
                             tok Assignment
                             assignv
                             emit (Istore varAddr)
-       Print          -> tok Print >> tok BracketOpen >> exprlist True >> tok BracketClose >> return ()
+       Print          -> tok Print >> tok BracketOpen >> exprlist InvokePrint >> tok BracketClose >> return ()
        While          -> do tok While
                             tok ParenOpen
                             startL <- newLabel
@@ -121,9 +121,9 @@ bexpr jdata = peekTok >>= \t -> case t of
 
 expr :: CompilerStateT ()
 expr = peekTok >>= \t -> case t of
-       Plus           -> tok Plus >> operands >> emit Iadd
+       Plus           -> tok Plus >> operands Iadd >> return ()
        Minus          -> tok Minus >> expr >> expr >> emit Isub
-       Multiply       -> tok Multiply >> operands >> emit Imul
+       Multiply       -> tok Multiply >> operands Imul >> return ()
        Divide         -> tok Divide >> expr >> expr >> emit Idiv
        Number n       -> do tokNum
                             emit (Ldc n)
@@ -134,15 +134,21 @@ expr = peekTok >>= \t -> case t of
                               Nothing -> error ("variable " ++ var ++ " not declared")
        _              -> empty
 
-operands :: CompilerStateT ()
-operands = peekTok >>= \t -> case t of
-           BracketOpen -> tok BracketOpen >> exprlist False >> tok BracketClose >> return ()
-           _           -> expr >> expr
+operands :: Instruction -> CompilerStateT ()
+operands inst = peekTok >>= \t -> case t of
+                BracketOpen -> tok BracketOpen >> exprlist inst >> tok BracketClose >> return ()
+                _           -> expr >> expr >> emit inst
 
-exprlist :: Bool -> CompilerStateT ()
-exprlist print = expr >> when print (emit InvokePrint) >> peekTok >>= \t -> case t of
-                                                          Comma -> tok Comma >> exprlist print
-                                                          _     -> return ()
+exprlist :: Instruction -> CompilerStateT ()
+exprlist InvokePrint = expr >> emit InvokePrint >> peekTok >>= \t -> case t of
+                                                   Comma -> tok Comma >> exprlist InvokePrint
+                                                   _     -> return ()
+exprlist inst = expr >> exprlistp inst
+
+exprlistp :: Instruction -> CompilerStateT ()
+exprlistp inst = peekTok >>= \t -> case t of
+                 Comma -> tok Comma >> expr >> emit inst >> exprlistp inst
+                 _     -> return ()
 
 relop :: Bool -> CompilerStateT (Label -> Instruction)
 relop notinv = peekTok >>= \t -> case t of
