@@ -5,8 +5,8 @@
 <statlistp>   ::= ; <stat> <statlistp>
 <statlistp>   ::= e
 
-<stat>        ::= print [ <exprlist> ]
 <stat>        ::= ID := <assignv>
+<stat>        ::= print [ <exprlist> ]
 <stat>        ::= while ( <bexpr> ) do <stat>
 <stat>        ::= conditional [ <caselist> ] default <stat>
 <stat>        ::= { <statlist> }
