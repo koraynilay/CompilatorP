@@ -12,6 +12,8 @@ import Lib.CompilerState (CompilerStateT
                          , emit, emitL
                          , getOrAddVarAddr , getVarAddr)
 
+import Control.Applicative
+
 data JumpData = JumpData
   { jumpto :: Label
   , jbody :: Label
@@ -70,7 +72,7 @@ stat = peekTok >>= \t -> case t of
                             emitL defaultL
                             stat
        CurlyOpen      -> tok CurlyOpen >> statlist >> tok CurlyClose >> return ()
-       _              -> error ("unexpected token: " ++ show t)
+       _              -> empty
 
 assignv :: CompilerStateT ()
 assignv = peekTok >>= \t -> case t of
@@ -113,7 +115,7 @@ bexpr jdata = peekTok >>= \t -> case t of
                                   expr
                                   let jloc = if notinv jdata then jbody jdata else jumpto jdata
                                   emit (jmpInstr jloc)
-              _             -> error ("unexpected token: " ++ show t)
+              _             -> empty
 
 
 expr :: CompilerStateT ()
@@ -129,7 +131,7 @@ expr = peekTok >>= \t -> case t of
                             case maybeVarAddr of
                               Just varAddr -> emit (Iload varAddr)
                               Nothing -> error ("variable " ++ var ++ " not declared")
-       _              -> error ("unexpected token: " ++ show t)
+       _              -> empty
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
@@ -149,4 +151,4 @@ relop notinv = peekTok >>= \t -> case t of
                GreaterThan  -> tok GreaterThan  >> return (if notinv then IfCmpGT else IfCmpLE)
                LessThan     -> tok LessThan     >> return (if notinv then IfCmpLT else IfCmpGE)
                NotEqual     -> tok NotEqual     >> return (if notinv then IfCmpNE else IfCmpEQ)
-               _            -> error ("unexpected token: " ++ show t)
+               _            -> empty

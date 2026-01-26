@@ -69,7 +69,6 @@ stat = (do (Identifier var) <- tokId
            emitL defaultL
            stat)
    <|> (tok CurlyOpen >> statlist >> tok CurlyClose >> return ())
-   <|> (do t <- getTok; error ("unexpected token: " ++ show t))
 
 assignv :: CompilerStateT ()
 assignv = (tok UserInput >> emit InvokeRead)
@@ -107,7 +106,6 @@ bexpr jdata = (do jmpInstr <- relop (notinv jdata)
                   let jdata' = jdata { notinv = True }
                   bexpr jdata'
                   bexpr jdata')
-          <|> (do t <- getTok; error ("unexpected token: " ++ show t))
 
 expr :: CompilerStateT ()
 expr = (tok Plus >> operands >> emit Iadd)
@@ -121,7 +119,6 @@ expr = (tok Plus >> operands >> emit Iadd)
            case maybeVarAddr of
              Just varAddr -> emit (Iload varAddr)
              Nothing -> error ("variable " ++ var ++ " not declared"))
-   <|> (do t <- getTok; error ("unexpected token: " ++ show t))
 
 operands :: CompilerStateT ()
 operands = (expr >> expr)
@@ -137,4 +134,3 @@ relop notinv = (tok GreaterEqual >> return (if notinv then IfCmpGE else IfCmpLT)
            <|> (tok GreaterThan  >> return (if notinv then IfCmpGT else IfCmpLE))
            <|> (tok LessThan     >> return (if notinv then IfCmpLT else IfCmpGE))
            <|> (tok NotEqual     >> return (if notinv then IfCmpNE else IfCmpEQ))
-           <|> (do t <- getTok; error ("unexpected token: " ++ show t))

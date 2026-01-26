@@ -7,6 +7,8 @@ import qualified Lib.CompilerState as CS
 import Lib.CompilerState (CompilerStateT
                          , getTok, peekTok)
 
+import Control.Applicative
+
 parse :: [Token] -> Bool
 parse ts = case CS.parse prog ts of
                 Just _ -> True
@@ -37,7 +39,7 @@ stat = peekTok >>= \t -> case t of
        While        -> tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat
        Conditional  -> tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat
        CurlyOpen    -> tok CurlyOpen >> statlist >> tok CurlyClose
-       _            -> error ("unexpected token: " ++ show t)
+       _            -> empty
 
 assignv :: CompilerStateT ()
 assignv = peekTok >>= \t -> case t of
@@ -59,7 +61,7 @@ bexpr = peekTok >>= \t -> case t of
         Conjunction   -> tok Conjunction >> bexpr >> bexpr
         Disjunction   -> tok Disjunction >> bexpr >> bexpr
         _ | isRelop t -> relop >> expr >> expr
-        _             -> error ("unexpected token: " ++ show t)
+        _             -> empty
 
 expr :: CompilerStateT ()
 expr = peekTok >>= \t -> case t of
@@ -69,7 +71,7 @@ expr = peekTok >>= \t -> case t of
        Divide       -> tok Divide >> expr >> expr
        Number     _ -> tokNum
        Identifier _ -> tokId
-       _            -> error ("unexpected token: " ++ show t)
+       _            -> empty
 
 operands :: CompilerStateT ()
 operands = peekTok >>= \t -> case t of
@@ -89,4 +91,4 @@ relop = peekTok >>= \t -> case t of
         GreaterThan  -> tok GreaterThan
         LessThan     -> tok LessThan
         NotEqual     -> tok NotEqual
-        _            -> error ("unexpected token: " ++ show t)
+        _            -> empty
