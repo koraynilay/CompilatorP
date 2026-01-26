@@ -23,5 +23,6 @@ handleFiles (f:fs) = handleFile f >> handleFiles fs
 handleFile :: String -> IO ()
 handleFile fn = do f <- readFile fn
                    ts <- matchIO fn f
-                   let r = parse ts
-                   putStr $!! toJasmin r
+                   case parse ts of
+                        [] -> putStrLn "parsing failed, invalid syntax"
+                        r  -> putStr $!! toJasmin r
