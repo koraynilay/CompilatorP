@@ -4,7 +4,7 @@ import Lib.Token
 import Lib.Lexer
 import Lib.Instruction
 import qualified Lib.CompilerState as CS
-import Lib.CompilerState (CompilerStateT, aroundErrTok
+import Lib.CompilerState (CompilerStateT
                          , getTok, peekTok)
 
 import Control.Applicative

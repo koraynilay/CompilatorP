@@ -5,7 +5,7 @@ import Lib.Lexer
 import Lib.Instruction
 import Lib.CodeGen
 import qualified Lib.CompilerState as CS
-import Lib.CompilerState (CompilerStateT, aroundErrTok
+import Lib.CompilerState (CompilerStateT
                          , getTok , peekTok
                          , newLabel
                          , tok , tokId , tokNum
