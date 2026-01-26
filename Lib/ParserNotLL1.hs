@@ -26,20 +26,17 @@ tokNum = CS.tokNum >> return ()
 -- prods
 
 prog :: CompilerStateT ()
-prog = (statlist >> tok EOF)
+prog = statlist >> tok EOF
 
 statlist :: CompilerStateT ()
 statlist = stat >> skipMany (tok Semicolon >> stat)
 
 stat :: CompilerStateT ()
-stat = (tokId >> tok Assignment >> assignv)
+stat = (tokId >> tok Assignment >> ((tok UserInput) <|> expr))
    <|> (tok Print >> tok BracketOpen >> exprlist >> tok BracketClose)
    <|> (tok While >> tok ParenOpen >> bexpr >> tok ParenClose >> tok Do >> stat)
    <|> (tok Conditional >> tok BracketOpen >> caselist >> tok BracketClose >> tok Default >> stat)
    <|> (tok CurlyOpen >> statlist >> tok CurlyClose)
-
-assignv :: CompilerStateT ()
-assignv = (tok UserInput) <|> expr
 
 caselist :: CompilerStateT ()
 caselist = skipSome caseitem
@@ -57,8 +54,8 @@ expr = (tok Plus >> operands)
    <|> (tok Minus >> expr >> expr)
    <|> (tok Multiply >> operands)
    <|> (tok Divide >> expr >> expr)
-   <|> (tokNum)
-   <|> (tokId)
+   <|> tokNum
+   <|> tokId
 
 operands :: CompilerStateT ()
 operands = (expr >> expr)
@@ -68,9 +65,9 @@ exprlist :: CompilerStateT ()
 exprlist = expr >> skipMany (tok Comma >> expr)
 
 relop :: CompilerStateT ()
-relop = (tok GreaterEqual)
-    <|> (tok LessEqual)
-    <|> (tok Equal)
-    <|> (tok GreaterThan)
-    <|> (tok LessThan)
-    <|> (tok NotEqual)
+relop = tok GreaterEqual
+    <|> tok LessEqual
+    <|> tok Equal
+    <|> tok GreaterThan
+    <|> tok LessThan
+    <|> tok NotEqual

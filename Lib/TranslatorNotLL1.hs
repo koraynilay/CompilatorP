@@ -46,7 +46,7 @@ stat :: CompilerStateT ()
 stat = (do (Identifier var) <- tokId
            varAddr <- getOrAddVarAddr var
            tok Assignment
-           assignv
+           (tok UserInput >> emit InvokeRead) <|> expr
            emit (Istore varAddr))
    <|> (tok Print >> tok BracketOpen >> exprlist InvokePrint >> tok BracketClose >> return ())
    <|> (do tok While
@@ -71,10 +71,6 @@ stat = (do (Identifier var) <- tokId
            emitL defaultL)
    <|> (tok CurlyOpen >> statlist >> tok CurlyClose >> return ())
 
-assignv :: CompilerStateT ()
-assignv = (tok UserInput >> emit InvokeRead)
-      <|> expr
-
 caselist :: Label -> CompilerStateT ()
 caselist defaultL = skipSome (caseitem defaultL)
 
@@ -87,12 +83,8 @@ caseitem defaultL = do tok Case
                        tok Do
                        emitL (jbody jdata)
                        stat
-                       caseitemd defaultL
+                       (tok Break >> emit (Goto defaultL)) <|> return ()
                        emitL (jumpto jdata)
-
-caseitemd :: Label -> CompilerStateT ()
-caseitemd defaultL = (tok Break >> emit (Goto defaultL))
-                 <|> return ()
 
 bexpr :: JumpData -> CompilerStateT ()
 bexpr jdata = (do jmpInstr <- relop (notinv jdata)
