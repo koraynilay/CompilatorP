@@ -3,6 +3,7 @@ module ParserSingle where
 import Text.ParserCombinators.ReadP
 import Data.Char (isAlpha, isDigit)
 import Control.Applicative ((<|>))
+import Control.Monad (void)
 
 parse :: String -> Bool
 parse s = case readP_to_S prog s of
@@ -14,20 +15,24 @@ parseDebug = readP_to_S prog
 
 -- helpers
 
+-- like (>>) but skipping all spaces and comments
 (>|) :: ReadP a -> ReadP b -> ReadP b
-f >| g = f >> many (skipSpaces >> skipComments) >> g
+f >| g = f >> skipSpaces >> many (skipComments >> skipSpaces) >> g
+infixl 1 >|
 
-skipComments :: ReadP ()
-skipComments = optional $ skipLineComment +++ skipMultComment
+-- like (>|) but requiring at least 1 space before skipping
+(>!) :: ReadP a -> ReadP b -> ReadP b
+f >! g = f >> optional skipComments >> munch1 isSpace >| g
+infixl 1 >!
+
+skipComments :: ReadP String
+skipComments = skipLineComment +++ skipMultComment
 
 skipLineComment :: ReadP String
-skipLineComment = between (string "//") (string "ab") (many get)
+skipLineComment = string "//" >> manyTill get (void (char '\n') +++ eof)
 
 skipMultComment :: ReadP String
-skipMultComment = between (string "/*") (string "*/") (many get)
-
-skipStart :: ReadP ()
-skipStart = skipComments
+skipMultComment = string "/*" >> manyTill get (string "*/")
 
 -- ([a-zA-Z]|_+[a-zA-Z0-9])[a-zA-Z0-9_]*
 getId :: ReadP String
