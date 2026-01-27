@@ -50,7 +50,7 @@ prog :: ReadP ()
 prog = skipStart >| statlist >| eof
 
 statlist :: ReadP [String]
-statlist = stat `sepBy1` string ";"
+statlist = stat >| many (string ";" >| stat)
 
 stat :: ReadP String
 stat = (string "print" >| string "[" >| exprlist >| string "]")
@@ -60,7 +60,7 @@ stat = (string "print" >| string "[" >| exprlist >| string "]")
    <|> (getId >| string ":=" >| (string "user" <|> expr))
 
 caselist :: ReadP [String]
-caselist = many caseitem
+caselist = caseitem >| (caselist <|> return ["a"])
 
 caseitem :: ReadP String
 caseitem = string "case" >| string "(" >| bexpr >| string ")" >| string "do " >| stat >| (string " break" <|> return "")
@@ -81,7 +81,7 @@ expr = (expr >| string "+" >| expr)
    <|> getId
 
 exprlist :: ReadP [String]
-exprlist = expr `sepBy1` string ","
+exprlist = expr >| many (string "," >| expr)
 
 relop :: ReadP String
 relop = string ">=" <|> string "<=" <|> string "==" <|> string ">" <|> string "<" <|> string "!="
