@@ -47,7 +47,7 @@ getNum = munch1 isDigit
 -- prods
 
 prog :: ReadP ()
-prog = skipStart >| statlist >| eof
+prog = return () >| statlist >| eof
 
 statlist :: ReadP [String]
 statlist = stat >| many (string ";" >| stat)
