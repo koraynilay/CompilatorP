@@ -1,7 +1,7 @@
 module ParserSingle where
 
 import Text.ParserCombinators.ReadP
-import Data.Char (isAlpha, isDigit)
+import Data.Char (isAlpha, isDigit, isSpace)
 import Control.Applicative ((<|>))
 import Control.Monad (void)
 
@@ -36,7 +36,9 @@ skipMultComment = string "/*" >> manyTill get (string "*/")
 
 -- ([a-zA-Z]|_+[a-zA-Z0-9])[a-zA-Z0-9_]*
 getId :: ReadP String
-getId = munch1 isAlpha <|> (munch1 ('_' ==) >> munch1 isAlpha)
+getId = do c <- (satisfy isAlpha >>= \c -> return [c]) +++ munch1 ('_' ==)
+           x <- many (satisfy isAlpha +++ satisfy isDigit +++ satisfy ('_' ==))
+           return $ c ++ x
 
 -- [0-9]+
 getNum :: ReadP String
