@@ -54,8 +54,8 @@ statlist = stat >| many (string ";" >| stat)
 
 stat :: ReadP String
 stat = (string "print" >| string "[" >| exprlist >| string "]")
-   <|> (string "while" >| string "(" >| bexpr >| string ")" >| string "do " >| stat)
-   <|> (string "conditional" >| string "[" >> caselist >> string "]" >| string "default " >| stat)
+   <|> (string "while" >| string "(" >| bexpr >| string ")" >| string "do" >! stat)
+   <|> (string "conditional" >| string "[" >| caselist >| string "]" >| string "default" >! stat)
    <|> (string "{" >| statlist >| string "}")
    <|> (getId >| string ":=" >| (string "user" <|> expr))
 
@@ -63,18 +63,18 @@ caselist :: ReadP [String]
 caselist = caseitem >| (caselist <|> return ["a"])
 
 caseitem :: ReadP String
-caseitem = string "case" >| string "(" >| bexpr >| string ")" >| string "do " >| stat >| (string " break" <|> return "")
+caseitem = string "case" >| string "(" >| bexpr >| string ")" >| string "do" >! stat >! (string "break" <|> return "")
 
 bexpr :: ReadP String
-bexpr = (expr  >| relop       >| expr)
-    <|> (bexpr >| string "&&" >| bexpr)
-    <|> (bexpr >| string "||" >| bexpr)
+bexpr = (relop >| expr >! expr)
+    <|> (string "&&" >| bexpr >| bexpr)
+    <|> (string "||" >| bexpr >| bexpr)
 
 expr :: ReadP String
-expr = (expr >| string "+" >| expr)
-   <|> (expr >| string "-" >| expr)
-   <|> (expr >| string "*" >| expr)
-   <|> (expr >| string "/" >| expr)
+expr = (string "+" >| expr >! expr)
+   <|> (string "-" >| expr >! expr)
+   <|> (string "*" >| expr >! expr)
+   <|> (string "/" >| expr >! expr)
    <|> (string "+" >| string "[" >| exprlist >| string "]")
    <|> (string "*" >| string "[" >| exprlist >| string "]")
    <|> getNum
