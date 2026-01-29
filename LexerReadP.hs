@@ -54,9 +54,9 @@ getId :: ReadP String
 getId = do c <- (do c <- satisfy isAlpha
                     return [c])
                 +++ (do u <- munch1 ('_' ==)
-                        c <- satisfy isAlpha
+                        c <- satisfy isAlphaNum
                         return $ u ++ [c])
-           x <- munch (\c -> isAlpha c || isDigit c || '_' == c)
+           x <- munch (\c -> isAlphaNum c || '_' == c)
            return $ c ++ x
 
 -- [0-9]+
