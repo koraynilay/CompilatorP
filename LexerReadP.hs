@@ -67,7 +67,7 @@ getNum = munch1 isDigit
 
 match :: ReadP [Token]
 match = do skipWhite
-           ts <- many1 matchTok
+           ts <- many matchTok
            eof
            return $ ts ++ [EOF]
 
@@ -105,3 +105,5 @@ matchTok = (do s <- getSkip getId
        <++ (string "/" >| return Divide)
        <++ (string ";" >| return Semicolon)
        <++ (string "," >| return Comma)
+       <++ (do cc <- count 2 get
+               error $ "wrong sequence of characters: " ++ cc)
