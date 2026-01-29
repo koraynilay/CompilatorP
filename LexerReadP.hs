@@ -3,12 +3,16 @@ module LexerReadP where
 import Lib.Token
 
 import Text.ParserCombinators.ReadP
-import Data.Char (isAlpha, isDigit, isSpace)
+import Data.Char (isAlphaNum, isAlpha, isDigit, isSpace)
 import Control.Applicative ((<|>))
 import Control.Monad (void)
 
 lex :: String -> [Token]
-lex = concat.map fst.(readP_to_S match)
+lex s = case [ toks | (toks, "") <- readP_to_S match s ] of
+          [t]      -> t
+          ts@(t:_) -> error ("more than one possible parsing: " ++ show ts)
+          _        -> error ("no parsing")
+--lex = concat.map fst.(readP_to_S match)
 
 lexDebug :: String -> [([Token], String)]
 lexDebug = readP_to_S match
