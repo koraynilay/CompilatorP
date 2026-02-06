@@ -1,6 +1,6 @@
 import Lib.Token
 import Lib.Parser
-import Lib.Lexer
+import Lib.LexerReadP
 
 import System.Environment (getArgs, getProgName)
 
@@ -19,4 +19,6 @@ handleFiles [] = return ()
 handleFiles (f:fs) = handleFile f >> handleFiles fs
 
 handleFile :: String -> IO ()
-handleFile fn = readFile fn >>= matchIO fn >>= \x -> putStrLn (fn ++ ": " ++ if (parse x) then "OK" else "failed")
+handleFile fn = do f <- readFile fn
+                   let x = lexTokens f
+                   putStrLn (fn ++ ": " ++ if (parse x) then "OK" else "failed")

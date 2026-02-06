@@ -1,6 +1,6 @@
 import Lib.Token
 import Lib.Translator
-import Lib.Lexer
+import Lib.LexerReadP
 import Lib.CodeGen (toJasmin)
 
 import System.Environment (getArgs, getProgName)
@@ -25,7 +25,7 @@ handleFiles (f:fs) = handleFile f >> handleFiles fs
 
 handleFile :: String -> IO ()
 handleFile fn = do f <- readFile fn
-                   ts <- matchIO fn f
+                   let ts = lexTokens f
                    case parse ts of
                         [] -> hPutStrLn stderr ("parsing failed for " ++ fn ++ ", invalid syntax")
                         r  -> putStr $!! toJasmin (capitalize (takeBaseName fn)) r
