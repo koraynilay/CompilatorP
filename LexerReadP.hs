@@ -7,11 +7,11 @@ import Data.Char (isAlphaNum, isAlpha, isDigit, isSpace)
 import Control.Applicative ((<|>))
 import Control.Monad (void)
 
-lex :: String -> [Token]
-lex s = case [ toks | (toks, "") <- readP_to_S match s ] of
-          [t]      -> t
-          ts@(t:_) -> error ("more than one possible parsing: " ++ show ts)
-          _        -> error ("no parsing")
+lexTokens :: String -> [Token]
+lexTokens s = case [ toks | (toks, "") <- readP_to_S match s ] of
+                [t]      -> t
+                ts@(t:_) -> error ("more than one possible parsing: " ++ show ts)
+                _        -> error ("no parsing")
 --lex = concat.map fst.(readP_to_S match)
 
 lexDebug :: String -> [([Token], String)]

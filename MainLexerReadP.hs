@@ -17,7 +17,7 @@ handleFiles [] = return ()
 handleFiles (f:fs) = handleFile f >> handleFiles fs
 
 handleFile :: String -> IO ()
-handleFile fn = readFile fn >>= \x -> putStrLn $ fn ++ ": " ++ show (LexerReadP.lex x)
+handleFile fn = readFile fn >>= \x -> putStrLn $ fn ++ ": " ++ show (lexTokens x)
 
 handleFile' :: String -> IO ()
 handleFile' fn = readFile fn >>= \x -> print $ lexDebug x
