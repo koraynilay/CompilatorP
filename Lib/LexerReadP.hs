@@ -1,4 +1,4 @@
-module LexerReadP where
+module Lib.LexerReadP where
 
 import Lib.Token
 

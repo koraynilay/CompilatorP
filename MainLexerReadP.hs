@@ -1,4 +1,4 @@
-import LexerReadP
+import Lib.LexerReadP
 
 import System.Environment (getArgs, getProgName)
 
