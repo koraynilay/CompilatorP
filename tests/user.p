@@ -1,0 +1,2 @@
+in := user;
+print[in]
